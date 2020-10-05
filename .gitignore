@@ -1,5 +1,6 @@
 /.bundle/
 /.env
+/.rspec_status
 /.yardoc
 /_yardoc/
 /coverage/
