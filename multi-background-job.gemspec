@@ -34,4 +34,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'redis', '>= 0.0.0'
+  spec.add_dependency 'connection_pool', '>= 0.0.0'
+  spec.add_dependency 'multi_json', '>= 0.0.0'
 end

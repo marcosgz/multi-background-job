@@ -25,4 +25,8 @@ RSpec.configure do |config|
 
   config.shared_context_metadata_behavior = :apply_to_host_groups
   config.include Hooks::Timecop
+
+  def reset_config!
+    MultiBackgroundJob.instance_variable_set(:@config, nil)
+  end
 end
