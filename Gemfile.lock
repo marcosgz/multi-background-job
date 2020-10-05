@@ -2,6 +2,8 @@ PATH
   remote: .
   specs:
     multi-background-job (0.1.0)
+      connection_pool
+      multi_json
       redis
 
 GEM
@@ -9,9 +11,11 @@ GEM
   specs:
     awesome_print (1.8.0)
     coderay (1.1.3)
+    connection_pool (2.2.3)
     diff-lcs (1.4.4)
     dotenv (2.7.6)
     method_source (1.0.0)
+    multi_json (1.15.0)
     pry (0.13.1)
       coderay (~> 1.1)
       method_source (~> 1.0)
