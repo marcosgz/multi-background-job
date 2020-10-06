@@ -55,10 +55,11 @@ module MultiBackgroundJob
   end
 
   def self.for(service, **options)
-    require_relative "./workers/#{service}"
-
+    require_relative "multi_background_job/workers/#{service}"
+    service = service.to_sym
     worker_options = options.merge(service: service)
-    mod = Workers.const_get(service.to_s.classify)
+    module_name = service.to_s.split(/_/i).collect!{ |w| w.capitalize }.join
+    mod = Workers.const_get(module_name)
     mod.module_eval do
       define_method(:bg_worker_options) do
         worker_options

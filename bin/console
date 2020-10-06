@@ -4,5 +4,6 @@ require 'bundler/setup'
 require 'dotenv/load'
 require 'pry'
 require 'awesome_print'
+require 'multi_background_job'
 
 Pry.start
