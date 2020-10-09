@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../lock'
+
 module MultiBackgroundJob
   module Adapters
     # This is a Sidekiq adapter that converts MultiBackgroundJob::Worker object into a sidekiq readable format
@@ -94,18 +96,20 @@ module MultiBackgroundJob
       def acknowledge
         return unless uniqueness?
 
-        MultiBackgroundJob.redis_pool.with do |redis|
-          redis.zrem(uniqueness_queue_name, job_lock_id)
-        end
-      end
-
-      def flush_expired_members_of_uniqueness_queue
-        MultiBackgroundJob.redis_pool.with do |redis|
-          redis.zremrangebyscore(uniqueness_queue_name, '-inf', "(#{now}")
-        end
+        uniqueness_lock&.unlock
       end
 
       protected
+
+      def uniqueness_lock
+        return unless uniqueness?
+
+        Lock.new(
+          digest: uniqueness_queue_name,
+          job_id: job_lock_id,
+          ttl: now + worker.options.dig(:uniq, :timeout),
+        )
+      end
 
       def namespace
         MultiBackgroundJob.config.redis_namespace
@@ -147,27 +151,15 @@ module MultiBackgroundJob
       # @return [Boolean] True or False if already exist a lock for this job.
       def duplicate?
         return false unless uniqueness?
+        return true if uniqueness_lock.locked?
 
-        lock_ttl = now + worker.options.dig(:uniq, :timeout)
-
-        is_dup = false
-        MultiBackgroundJob.redis_pool.with do |redis|
-          timestamp = redis.zscore(uniqueness_queue_name, job_lock_id)
-          # binding.pry
-          if timestamp.nil? || (timestamp && timestamp < now) # It's not locked or lock already expired
-            @payload['uniq'] = worker.options.fetch(:uniq).each_with_object({}) do |(key, val), memo|
-              memo[key.to_s] = val.is_a?(Symbol) ? val.to_s : val
-            end
-            @payload['uniq']['ttl'] = lock_ttl
-            redis.zadd(uniqueness_queue_name, lock_ttl, job_lock_id)
-          else
-            is_dup = true
-          end
-          # Flush expired jobs
-          redis.zremrangebyscore(uniqueness_queue_name, '-inf', "(#{now}")
+        @payload['uniq'] = worker.options.fetch(:uniq).each_with_object({}) do |(key, val), memo|
+          memo[key.to_s] = val.is_a?(Symbol) ? val.to_s : val
         end
+        @payload['uniq']['ttl'] = uniqueness_lock.ttl
+        uniqueness_lock.lock
 
-        is_dup
+        false
       end
 
       # Generage a uniq hexdigest using job class name and args
