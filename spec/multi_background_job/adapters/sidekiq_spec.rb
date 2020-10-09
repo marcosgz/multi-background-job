@@ -19,7 +19,7 @@ RSpec.describe MultiBackgroundJob::Adapters::Sidekiq do
       standard_name: model.send(:immediate_queue_name),
       scheduled_name: model.send(:scheduled_queue_name),
     }.tap do |h|
-      h[:uniqueness_name] = model.send(:uniqueness_queue_name) if worker.options.key?(:uniq)
+      h[:uniqueness_name] = model.send(:uniqueness_lock).digest if worker.options.key?(:uniq)
     end
   end
 
@@ -79,7 +79,7 @@ RSpec.describe MultiBackgroundJob::Adapters::Sidekiq do
       it { expect(model.send(:uniqueness?)).to eq(true) }
 
       specify do
-        expect(redis_dataset[:uniqueness_name]).to match(/:uniqueness:mailer$/)
+        expect(redis_dataset[:uniqueness_name]).to match(/:uniqueness:sidekiq:mailer$/)
       end
 
       it 'does nothing when set does not exist' do
@@ -138,7 +138,7 @@ RSpec.describe MultiBackgroundJob::Adapters::Sidekiq do
       it { expect(model.send(:uniqueness?)).to eq(true) }
 
       specify do
-        expect(redis_dataset[:uniqueness_name]).to match(/:uniqueness$/)
+        expect(redis_dataset[:uniqueness_name]).to match(/:uniqueness:sidekiq$/)
       end
 
       it 'does nothing when set does not exist' do
@@ -253,7 +253,7 @@ RSpec.describe MultiBackgroundJob::Adapters::Sidekiq do
       end
 
       specify do
-        expect(redis_dataset[:uniqueness_name]).to match(/:uniqueness:mailer$/)
+        expect(redis_dataset[:uniqueness_name]).to match(/:uniqueness:sidekiq:mailer$/)
       end
 
       it 'adds a lock with 1 hour of TTL and enqueues a new job' do
@@ -312,7 +312,7 @@ RSpec.describe MultiBackgroundJob::Adapters::Sidekiq do
       end
 
       specify do
-        expect(redis_dataset[:uniqueness_name]).to match(/:uniqueness$/)
+        expect(redis_dataset[:uniqueness_name]).to match(/:uniqueness:sidekiq$/)
       end
 
       it 'does not push job when active uniqueness lock exist' do

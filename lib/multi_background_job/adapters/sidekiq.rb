@@ -105,7 +105,7 @@ module MultiBackgroundJob
         return unless uniqueness?
 
         Lock.new(
-          digest: uniqueness_queue_name,
+          digest: LockDigest.new('sidekiq', queue, across: worker.options.dig(:uniq, :across)).to_s,
           job_id: job_lock_id,
           ttl: now + worker.options.dig(:uniq, :timeout),
         )
@@ -125,22 +125,6 @@ module MultiBackgroundJob
 
       def immediate_queue_name
         "#{namespace}:queue:#{queue}"
-      end
-
-      def uniqueness_queue_name
-        across = worker.options.dig(:uniq, :across)
-        case across
-        when :systemwide
-          "#{namespace}:uniqueness"
-        when :queue
-          "#{namespace}:uniqueness:#{queue}"
-        else
-          raise Error, format(
-            '%<adapter>s can not resolve the uniqueness_queue_name using across %<across>p',
-            adapter: self.class.name,
-            across: across,
-          )
-        end
       end
 
       # This method uses an external queue to control duplications. It has no sidekiq connection.
