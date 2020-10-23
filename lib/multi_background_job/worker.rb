@@ -9,7 +9,7 @@ module MultiBackgroundJob
     def initialize(worker_class, **options)
       @worker_class = worker_class
       @options = options
-      @job = {}
+      @job = {} # @IDEA Convert @job hash to a Struct
       unique(@options.delete(:uniq)) if @options.key?(:uniq)
     end
 
