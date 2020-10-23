@@ -3,6 +3,8 @@
 require 'redis'
 require 'connection_pool'
 
+require_relative './middleware_chain'
+
 module MultiBackgroundJob
   class Config
     class << self
@@ -73,6 +75,12 @@ module MultiBackgroundJob
         size: redis_pool_size,
         timeout: redis_pool_timeout,
       }
+    end
+
+    def middleware
+      @middleware ||= MiddlewareChain.new
+      yield @middleware if block_given?
+      @middleware
     end
 
     private

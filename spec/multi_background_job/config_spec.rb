@@ -111,4 +111,10 @@ RSpec.describe MultiBackgroundJob::Config do
       expect(config.redis_pool).to eq(timeout: 5, size: 5)
     end
   end
+
+  describe '.middleware' do
+    specify do
+      expect(config.middleware).to be_an_instance_of(MultiBackgroundJob::MiddlewareChain)
+    end
+  end
 end
