@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
 module MultiBackgroundJob
-  # Middleware is code configured to run before/after a job is processed.
-  # It is patterned after Rack middleware. Middlewares exists to the client side
-  # for some modification before push the job to the server
+  # Middleware is code configured to run before/after push a new job.
+  # It is patterned after Rack middleware for some modification before push the job to the server
   #
   # To add a middleware:
   #
@@ -13,7 +12,7 @@ module MultiBackgroundJob
   #   end
   # end
   #
-  # This is an example of a minimal client middleware, note the method must return the result
+  # This is an example of a minimal middleware, note the method must return the result
   # or the job will not push the server.
   #
   # class MyMiddleware
