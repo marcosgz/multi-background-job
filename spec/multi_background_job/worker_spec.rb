@@ -37,26 +37,26 @@ RSpec.describe MultiBackgroundJob::Worker do
     end
   end
 
-  describe '.custom' do
+  describe '.with_custom' do
     specify do
       expect(worker.job).to eq({})
-      expect(worker.custom(nil, nil)).to eq(worker)
+      expect(worker.with_custom(nil, nil)).to eq(worker)
       expect(worker.job).to eq({})
     end
 
     specify do
       expect(worker.job).to eq({})
-      expect(worker.custom(:key, true)).to eq(worker)
+      expect(worker.with_custom(:key, true)).to eq(worker)
       expect(worker.job).to eq('custom' => { 'key' => true })
-      expect(worker.custom(:key, false)).to eq(worker)
+      expect(worker.with_custom(:key, false)).to eq(worker)
       expect(worker.job).to eq('custom' => { 'key' => false })
     end
 
     specify do
       expect(worker.job).to eq({})
-      expect(worker.custom('one', 1)).to eq(worker)
+      expect(worker.with_custom('one', 1)).to eq(worker)
       expect(worker.job).to eq('custom' => { 'one' => 1 })
-      expect(worker.custom('two', 2)).to eq(worker)
+      expect(worker.with_custom('two', 2)).to eq(worker)
       expect(worker.job).to eq('custom' => { 'one' => 1, 'two' => 2 })
     end
   end
@@ -126,6 +126,24 @@ RSpec.describe MultiBackgroundJob::Worker do
       expect(worker.job).to eq({})
       expect(worker.in(now - 1)).to eq(worker)
       expect(worker.job).to eq({})
+    end
+  end
+
+  describe '.unique' do
+    specify do
+      worker = described_class.new('DummyWorker')
+      expect(worker.unique_job).to eq(nil)
+      expect(worker.unique(true)).to eq(worker)
+      expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
+      expect(worker.unique(false)).to eq(worker)
+      expect(worker.unique_job).to eq(nil)
+    end
+
+    specify do
+      worker = described_class.new('DummyWorker')
+      expect(worker.unique_job).to eq(nil)
+      expect(worker.unique(across: :systemwide)).to eq(worker)
+      expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
     end
   end
 

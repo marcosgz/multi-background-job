@@ -33,9 +33,6 @@ module MultiBackgroundJob
 
         options[:retry] ||= payload['retry'] if payload.key?('retry')
         options[:queue] ||= payload['queue'] if payload.key?('queue')
-        if (uniq_val = payload['uniq']) && (unique_job = UniqueJob.coerce(uniq_val))
-          options[:uniq] = unique_job.to_hash
-        end
 
         MultiBackgroundJob[payload['class'], **options].tap do |worker|
           worker.with_args(*Array(payload['args'])) if payload.key?('args')
@@ -43,8 +40,9 @@ module MultiBackgroundJob
           worker.created_at(payload['created_at']) if payload.key?('created_at')
           worker.enqueued_at(payload['enqueued_at']) if payload.key?('enqueued_at')
           worker.at(payload['at']) if payload.key?('at')
+          worker.unique(payload['uniq']) if payload.key?('uniq')
           if payload.key?('custom') && (custom_value = payload['custom']).is_a?(Hash)
-            custom_value.each { |k, v| worker.custom(k, v) }
+            custom_value.each { |k, v| worker.with_custom(k, v) }
           end
         end
       end

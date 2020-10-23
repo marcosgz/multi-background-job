@@ -61,6 +61,8 @@ module MultiBackgroundJob
     end
 
     def eql?(other)
+      return false unless other.is_a?(self.class)
+
       [across, timeout, unlock_policy] == [other.across, other.timeout, other.unlock_policy]
     end
     alias == eql?

@@ -10,11 +10,7 @@ module MultiBackgroundJob
       @worker_class = worker_class
       @options = options
       @job = {}
-      if @options.key?(:uniq)
-        value = @options.delete(:uniq)
-        value = {} if value == true
-        @unique_job = UniqueJob.new(value) if value.is_a?(Hash)
-      end
+      unique(@options.delete(:uniq)) if @options.key?(:uniq)
     end
 
     def self.coerce(service:, payload:, **opts)
@@ -52,11 +48,22 @@ module MultiBackgroundJob
     end
     alias_method :at, :in
 
+    # Wrap uniq options
+    #
+    # @param value [Hash] Unique configurations with `across`, `timeout` and `unlock_policy`
+    # @return self
+    def unique(value)
+      value = {} if value == true
+      @unique_job = value.is_a?(Hash) ? UniqueJob.coerce(value) : nil
+
+      self
+    end
+
     # Add a custom value to the job. it's useful to store addicional information such as unique job information
     #
     # @param key [String, Symbol] the key for the given value
     # @return self
-    def custom(key, value)
+    def with_custom(key, value)
       return self unless key
 
       @job['custom'.freeze] ||= {}
@@ -97,6 +104,8 @@ module MultiBackgroundJob
     end
 
     def eql?(other)
+      return false unless other.is_a?(self.class)
+
       worker_class == other.worker_class && \
         job == other.job &&
         options == other.options &&
