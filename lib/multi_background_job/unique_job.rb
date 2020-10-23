@@ -36,6 +36,16 @@ module MultiBackgroundJob
       @unlock_policy = unlock_policy.to_sym
     end
 
+    def self.coerce(value)
+      return unless value.is_a?(Hash)
+
+      new(
+        across: (value['across'] || value[:across] || :queue).to_sym,
+        timeout: (value['timeout'] || value[:timeout] || nil),
+        unlock_policy: (value['unlock_policy'] || value[:unlock_policy] || :success).to_sym,
+      )
+    end
+
     def to_hash
       {
         across: across,

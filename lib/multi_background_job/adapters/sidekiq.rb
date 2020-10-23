@@ -33,11 +33,8 @@ module MultiBackgroundJob
 
         options[:retry] ||= payload['retry'] if payload.key?('retry')
         options[:queue] ||= payload['queue'] if payload.key?('queue')
-        if (uniq_val = payload['uniq']).is_a?(Hash)
-          options[:uniq] ||= {}
-          options[:uniq][:across] ||= uniq_val['across']&.to_sym
-          options[:uniq][:timeout] ||= uniq_val['timeout']
-          options[:uniq][:unlock_policy] ||= uniq_val['unlock_policy']&.to_sym
+        if (uniq_val = payload['uniq']) && (unique_job = UniqueJob.coerce(uniq_val))
+          options[:uniq] = unique_job.to_hash
         end
 
         MultiBackgroundJob[payload['class'], **options].tap do |worker|
@@ -46,6 +43,9 @@ module MultiBackgroundJob
           worker.created_at(payload['created_at']) if payload.key?('created_at')
           worker.enqueued_at(payload['enqueued_at']) if payload.key?('enqueued_at')
           worker.at(payload['at']) if payload.key?('at')
+          if payload.key?('custom') && (custom_value = payload['custom']).is_a?(Hash)
+            custom_value.each { |k, v| worker.custom(k, v) }
+          end
         end
       end
 
@@ -137,8 +137,7 @@ module MultiBackgroundJob
         return false unless unique_job_enabled?
         return true if uniqueness_lock.locked?
 
-        @payload['uniq'] = worker.unique_job.as_json
-        @payload['uniq']['ttl'] = uniqueness_lock.ttl
+        @payload['uniq'] = worker.unique_job.as_json.merge('ttl' => uniqueness_lock.ttl)
         uniqueness_lock.lock
 
         false

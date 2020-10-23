@@ -32,7 +32,7 @@ module MultiBackgroundJob
     # Adds arguments to the job
     # @return self
     def with_args(*args)
-      @job['args'] = args
+      @job['args'.freeze] = args
 
       self
     end
@@ -45,15 +45,28 @@ module MultiBackgroundJob
       int = timestamp.respond_to?(:strftime) ? timestamp.to_f : now + timestamp.to_f
       return self if int <= now
 
-      @job['at'] = int
-      @job['created_at'] = now
+      @job['at'.freeze] = int
+      @job['created_at'.freeze] = now
 
       self
     end
     alias_method :at, :in
 
+    # Add a custom value to the job. it's useful to store addicional information such as unique job information
+    #
+    # @param key [String, Symbol] the key for the given value
+    # @return self
+    def custom(key, value)
+      return self unless key
+
+      @job['custom'.freeze] ||= {}
+      @job['custom'.freeze][key.to_s] = value
+
+      self
+    end
+
     def with_job_jid(jid = nil)
-      @job['jid'] ||= jid || MultiBackgroundJob.jid
+      @job['jid'.freeze] ||= jid || MultiBackgroundJob.jid
 
       self
     end
@@ -67,7 +80,7 @@ module MultiBackgroundJob
         raise Error, format('Service %<to>p is not implemented. Please use one of %<list>p', to: to, list: SERVICES.keys)
       end
 
-      @job['created_at'] ||= Time.now.to_f
+      @job['created_at'.freeze] ||= Time.now.to_f
       SERVICES[to].push(with_job_jid)
     end
 
