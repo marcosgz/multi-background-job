@@ -94,7 +94,7 @@ module MultiBackgroundJob
       # @return [Boolean, NilClass] Returns the redis response for the ZREM comand, or nil when
       #   worker does not implement the uniqueness rule
       def acknowledge
-        return unless uniqueness?
+        return unless unique_job_enabled?
 
         uniqueness_lock&.unlock
       end
@@ -102,12 +102,12 @@ module MultiBackgroundJob
       protected
 
       def uniqueness_lock
-        return unless uniqueness?
+        return unless unique_job_enabled?
 
         Lock.new(
-          digest: LockDigest.new('sidekiq', queue, across: worker.options.dig(:uniq, :across)).to_s,
+          digest: LockDigest.new('sidekiq', queue, across: worker.unique_job.across).to_s,
           job_id: job_lock_id,
-          ttl: now + worker.options.dig(:uniq, :timeout),
+          ttl: now + worker.unique_job.timeout,
         )
       end
 
@@ -115,8 +115,8 @@ module MultiBackgroundJob
         MultiBackgroundJob.config.redis_namespace
       end
 
-      def uniqueness?
-        !!worker.options[:uniq]
+      def unique_job_enabled?
+        !worker.unique_job.nil?
       end
 
       def scheduled_queue_name
@@ -134,12 +134,10 @@ module MultiBackgroundJob
       # equal job to be queued again.
       # @return [Boolean] True or False if already exist a lock for this job.
       def duplicate?
-        return false unless uniqueness?
+        return false unless unique_job_enabled?
         return true if uniqueness_lock.locked?
 
-        @payload['uniq'] = worker.options.fetch(:uniq).each_with_object({}) do |(key, val), memo|
-          memo[key.to_s] = val.is_a?(Symbol) ? val.to_s : val
-        end
+        @payload['uniq'] = worker.unique_job.as_json
         @payload['uniq']['ttl'] = uniqueness_lock.ttl
         uniqueness_lock.lock
 

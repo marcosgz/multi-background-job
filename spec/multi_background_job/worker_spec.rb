@@ -105,7 +105,7 @@ RSpec.describe MultiBackgroundJob::Worker do
     end
   end
 
-  describe '.setup_uniq_option' do
+  describe '.unique_job' do
     let(:defaults) do
       {
         across: :queue,
@@ -118,28 +118,28 @@ RSpec.describe MultiBackgroundJob::Worker do
       worker = described_class.new('DummyWorker')
       expect(worker.job).to eq({})
       expect(worker.options).to eq({})
+      expect(worker.unique_job).to eq(nil)
     end
 
     specify do
       worker = described_class.new('DummyWorker', uniq: {})
       expect(worker.job).to eq({})
-      expect(worker.options).to eq(
-        uniq: defaults
-      )
+      expect(worker.options).to eq({})
+      expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
     end
 
     specify do
       worker = described_class.new('DummyWorker', uniq: true)
       expect(worker.job).to eq({})
-      expect(worker.options).to eq(
-        uniq: defaults
-      )
+      expect(worker.options).to eq({})
+      expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
     end
 
     specify do
       worker = described_class.new('DummyWorker', uniq: false)
       expect(worker.job).to eq({})
       expect(worker.options).to eq({})
+      expect(worker.unique_job).to eq(nil)
     end
 
     context 'with custom :across option' do
@@ -151,24 +151,24 @@ RSpec.describe MultiBackgroundJob::Worker do
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { across: :queue })
-        expect(worker.options).to eq(uniq: defaults)
-        expect(worker.job).to eq({})
+        expect(worker.options).to eq({})
+        expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
+        expect(worker.unique_job.across).to eq(:queue)
       end
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { across: :systemwide })
         expect(worker.job).to eq({})
-        expect(worker.options).to eq(
-          uniq: defaults.merge(across: :systemwide),
-        )
+        expect(worker.options).to eq({})
+        expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
+        expect(worker.unique_job.across).to eq(:systemwide)
       end
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { across: 'systemwide' })
         expect(worker.job).to eq({})
-        expect(worker.options).to eq(
-          uniq: defaults.merge(across: :systemwide),
-        )
+        expect(worker.options).to eq({})
+        expect(worker.unique_job.across).to eq(:systemwide)
       end
     end
 
@@ -182,23 +182,25 @@ RSpec.describe MultiBackgroundJob::Worker do
       specify do
         worker = described_class.new('DummyWorker', uniq: { unlock_policy: :success })
         expect(worker.job).to eq({})
-        expect(worker.options).to eq(uniq: defaults)
+        expect(worker.options).to eq({})
+        expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
+        expect(worker.unique_job.unlock_policy).to eq(:success)
       end
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { unlock_policy: :start })
         expect(worker.job).to eq({})
-        expect(worker.options).to eq(
-          uniq: defaults.merge(unlock_policy: :start)
-        )
+        expect(worker.options).to eq({})
+        expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
+        expect(worker.unique_job.unlock_policy).to eq(:start)
       end
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { unlock_policy: 'start' })
         expect(worker.job).to eq({})
-        expect(worker.options).to eq(
-          uniq: defaults.merge(unlock_policy: :start)
-        )
+        expect(worker.options).to eq({})
+        expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
+        expect(worker.unique_job.unlock_policy).to eq(:start)
       end
     end
 
@@ -206,17 +208,17 @@ RSpec.describe MultiBackgroundJob::Worker do
       specify do
         worker = described_class.new('DummyWorker', uniq: { timeout: -1 })
         expect(worker.job).to eq({})
-        expect(worker.options).to eq(
-          uniq: defaults
-        )
+        expect(worker.options).to eq({})
+        expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
+        expect(worker.unique_job.timeout).to eq(defaults[:timeout])
       end
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { timeout: 10 })
         expect(worker.job).to eq({})
-        expect(worker.options).to eq(
-          uniq: defaults.merge(timeout: 10)
-        )
+        expect(worker.options).to eq({})
+        expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
+        expect(worker.unique_job.timeout).to eq(10)
       end
     end
   end

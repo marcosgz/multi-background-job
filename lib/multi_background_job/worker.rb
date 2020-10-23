@@ -1,14 +1,10 @@
 # frozen_string_literal: true
 
+require_relative './unique_job'
+
 module MultiBackgroundJob
   class Worker
-    attr_reader :options, :job, :worker_class
-
-    UNIQ_ARGS = {
-      across: %i[queue systemwide],
-      timeout: 604800, # 1 week
-      unlock_policy: %i[success start],
-    }.freeze
+    attr_reader :options, :job, :worker_class, :unique_job
 
     def initialize(worker_class, **options)
       @worker_class = worker_class
@@ -17,7 +13,7 @@ module MultiBackgroundJob
       if @options.key?(:uniq)
         value = @options.delete(:uniq)
         value = {} if value == true
-        setup_uniq_option(**value) if value.is_a?(Hash)
+        @unique_job = UniqueJob.new(value) if value.is_a?(Hash)
       end
     end
 
@@ -88,35 +84,11 @@ module MultiBackgroundJob
     end
 
     def eql?(other)
-      worker_class == other.worker_class && job == other.job && options == other.options
+      worker_class == other.worker_class && \
+        job == other.job &&
+        options == other.options &&
+        unique_job == other.unique_job
     end
     alias == eql?
-
-    protected
-
-    # @options [Hash] Uniq definitions
-    # @option [Symbol] :across Valid options are :queue and :systemwide. If jobs should not to be duplicated on
-    #   current queue or the entire system
-    # @option [Integer] :timeout Amount of times in seconds. Timeout decides how long to wait for acquiring the lock.
-    #   A default timeout is defined to 1 week so unique locks won't last forever.
-    # @option [Symbol] :unlock_policy Control when the unique lock is removed. The default value is `success`.
-    #   The job will not unlock until it executes successfully, it will remain locked even if it raises an error and
-    #   goes into the retry queue. The alternative value is `start` the job will unlock right before it starts executing
-    # @return self
-    def setup_uniq_option(across: :queue, timeout: nil, unlock_policy: :success)
-      unless UNIQ_ARGS[:across].include?(across.to_sym)
-        raise Error, format('Invalid `across: %<given>p` option. Only %<expected>p are allowed.', given: across, expected: UNIQ_ARGS[:across])
-      end
-      unless UNIQ_ARGS[:unlock_policy].include?(unlock_policy.to_sym)
-        raise Error, format('Invalid `unlock_policy: %<given>p` option. Only %<expected>p are allowed.', given: unlock_policy, expected: UNIQ_ARGS[:unlock_policy])
-      end
-      timeout = UNIQ_ARGS[:timeout] if timeout.to_i <= 0
-
-      @options[:uniq] = {
-        across: across.to_sym,
-        timeout: timeout.to_i,
-        unlock_policy: unlock_policy.to_sym,
-      }
-    end
   end
 end
