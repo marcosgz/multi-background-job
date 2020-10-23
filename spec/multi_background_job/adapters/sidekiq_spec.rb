@@ -19,7 +19,7 @@ RSpec.describe MultiBackgroundJob::Adapters::Sidekiq do
       standard_name: model.send(:immediate_queue_name),
       scheduled_name: model.send(:scheduled_queue_name),
     }.tap do |h|
-      h[:uniqueness_name] = model.send(:uniqueness_lock).digest if worker.options.key?(:uniq)
+      h[:uniqueness_name] = model.send(:uniqueness_lock).digest if worker.unique_job
     end
   end
 
@@ -51,7 +51,7 @@ RSpec.describe MultiBackgroundJob::Adapters::Sidekiq do
     let(:now) { Time.now.to_f }
 
     context 'with a standard job' do
-      it { expect(model.send(:uniqueness?)).to eq(false) }
+      it { expect(model.send(:unique_job_enabled?)).to eq(false) }
 
       it 'does dothing' do
         expect(MultiBackgroundJob.redis_pool).not_to receive(:with)
@@ -76,7 +76,7 @@ RSpec.describe MultiBackgroundJob::Adapters::Sidekiq do
         conn.del(redis_dataset[:uniqueness_name])
       end
 
-      it { expect(model.send(:uniqueness?)).to eq(true) }
+      it { expect(model.send(:unique_job_enabled?)).to eq(true) }
 
       specify do
         expect(redis_dataset[:uniqueness_name]).to match(/:uniqueness:sidekiq:mailer$/)
@@ -135,7 +135,7 @@ RSpec.describe MultiBackgroundJob::Adapters::Sidekiq do
         conn.del(redis_dataset[:uniqueness_name])
       end
 
-      it { expect(model.send(:uniqueness?)).to eq(true) }
+      it { expect(model.send(:unique_job_enabled?)).to eq(true) }
 
       specify do
         expect(redis_dataset[:uniqueness_name]).to match(/:uniqueness:sidekiq$/)
