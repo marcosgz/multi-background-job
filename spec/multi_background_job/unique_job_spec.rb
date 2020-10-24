@@ -192,4 +192,13 @@ RSpec.describe MultiBackgroundJob::UniqueJob do
       expect(described_class.coerce('timeout' => 10)).to eq(described_class.new(timeout: 10))
     end
   end
+
+  describe '.created_at', freeze_at: [2020, 7, 1, 22, 24, 40] do
+    let(:now) { Time.now.to_f }
+
+    specify do
+      expect(described_class.new(timeout: 10).ttl).to eq(now + 10)
+      expect(described_class.new(timeout: 20).ttl).to eq(now + 20)
+    end
+  end
 end

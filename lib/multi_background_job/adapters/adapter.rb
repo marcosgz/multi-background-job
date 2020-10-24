@@ -10,13 +10,6 @@ module MultiBackgroundJob
         raise NotImplemented
       end
 
-      # Sends the act state to the service
-      # @param _worker [MultiBackgroundJob::Worker] An instance of background worker
-      # @abstract Child classes should override this method
-      def self.acknowledge(_worker)
-        raise NotImplemented
-      end
-
       # Coerces the raw payload into an instance of Worker
       # @param payload [Object] the object that should be coerced to a Worker
       # @options options [Hash] list of options that will be passed along to the Worker instance

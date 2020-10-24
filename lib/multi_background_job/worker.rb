@@ -88,19 +88,10 @@ module MultiBackgroundJob
       end
 
       @job['created_at'.freeze] ||= Time.now.to_f
-      SERVICES[to].push(with_job_jid)
-    end
-
-    # @param :to [Symbol] Adapter key
-    # @return Response of service
-    # @see MultiBackgroundJob::Adapters::** for more details
-    def acknowledge(to: nil)
-      to ||= options[:service]
-      unless SERVICES.include?(to)
-        raise Error, format('Service %<to>p is not implemented. Please use one of %<list>p', to: to, list: SERVICES.keys)
+      worker_to_push = with_job_jid
+      MultiBackgroundJob.config.middleware.invoke(worker_to_push, to) do
+        SERVICES[to].push(worker_to_push)
       end
-
-      SERVICES[to].acknowledge(self)
     end
 
     def eql?(other)
@@ -112,5 +103,9 @@ module MultiBackgroundJob
         unique_job == other.unique_job
     end
     alias == eql?
+
+    def unique_job?
+      unique_job.is_a?(UniqueJob)
+    end
   end
 end

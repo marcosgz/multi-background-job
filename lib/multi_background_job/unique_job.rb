@@ -54,6 +54,10 @@ module MultiBackgroundJob
       }
     end
 
+    def ttl
+      Time.now.to_f + timeout
+    end
+
     def as_json
       to_hash.each_with_object({}) do |(key, val), memo|
         memo[key.to_s] = val.is_a?(Symbol) ? val.to_s : val

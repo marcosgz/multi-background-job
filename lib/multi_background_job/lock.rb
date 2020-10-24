@@ -66,6 +66,13 @@ module MultiBackgroundJob
       locked
     end
 
+    def eql?(other)
+      return false unless other.is_a?(self.class)
+
+      [digest, job_id, ttl] == [other.digest, other.job_id, other.ttl]
+    end
+    alias == eql?
+
     protected
 
     def now
