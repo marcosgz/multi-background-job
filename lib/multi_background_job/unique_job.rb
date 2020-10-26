@@ -8,7 +8,7 @@ module MultiBackgroundJob
       unlock_policy: %i[success start],
     }.freeze
 
-    attr_reader :across, :timeout, :unlock_policy
+    attr_reader :across, :timeout, :unlock_policy, :lock
 
     # @options [Hash] Unique definitions
     # @option [Symbol] :across Valid options are :queue and :systemwide. If jobs should not to be duplicated on
@@ -18,7 +18,7 @@ module MultiBackgroundJob
     # @option [Symbol] :unlock_policy Control when the unique lock is removed. The default value is `success`.
     #   The job will not unlock until it executes successfully, it will remain locked even if it raises an error and
     #   goes into the retry queue. The alternative value is `start` the job will unlock right before it starts executing
-    def initialize(across: :queue, timeout: nil, unlock_policy: :success)
+    def initialize(across: :queue, timeout: nil, unlock_policy: :success, lock: nil)
       unless VALID_OPTIONS[:across].include?(across.to_sym)
         raise Error, format('Invalid `across: %<given>p` option. Only %<expected>p are allowed.',
           given: across,
@@ -34,6 +34,18 @@ module MultiBackgroundJob
       @across = across.to_sym
       @timeout = timeout.to_i
       @unlock_policy = unlock_policy.to_sym
+      @lock = lock if lock.is_a?(MultiBackgroundJob::Lock)
+    end
+
+    def self.coerce(value)
+      return unless value.is_a?(Hash)
+
+      new(
+        across: (value['across'] || value[:across] || :queue).to_sym,
+        timeout: (value['timeout'] || value[:timeout] || nil),
+        unlock_policy: (value['unlock_policy'] || value[:unlock_policy] || :success).to_sym,
+        lock: MultiBackgroundJob::Lock.coerce(value),
+      )
     end
 
     def to_hash
@@ -44,6 +56,10 @@ module MultiBackgroundJob
       }
     end
 
+    def ttl
+      Time.now.to_f + timeout
+    end
+
     def as_json
       to_hash.each_with_object({}) do |(key, val), memo|
         memo[key.to_s] = val.is_a?(Symbol) ? val.to_s : val
@@ -51,6 +67,8 @@ module MultiBackgroundJob
     end
 
     def eql?(other)
+      return false unless other.is_a?(self.class)
+
       [across, timeout, unlock_policy] == [other.across, other.timeout, other.unlock_policy]
     end
     alias == eql?

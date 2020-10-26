@@ -164,4 +164,41 @@ RSpec.describe MultiBackgroundJob::UniqueJob do
       )
     end
   end
+
+  describe '.coerce' do
+    specify do
+      expect(described_class.coerce(nil)).to eq(nil)
+      expect(described_class.coerce(false)).to eq(nil)
+      expect(described_class.coerce(true)).to eq(nil)
+      expect(described_class.coerce('')).to eq(nil)
+    end
+
+    specify do
+      expect(described_class.coerce({})).to eq(described_class.new)
+    end
+
+    specify do
+      expect(described_class.coerce(across: 'systemwide')).to eq(described_class.new(across: :systemwide))
+      expect(described_class.coerce('across' => :systemwide)).to eq(described_class.new(across: :systemwide))
+    end
+
+    specify do
+      expect(described_class.coerce(unlock_policy: 'success')).to eq(described_class.new(unlock_policy: :success))
+      expect(described_class.coerce('unlock_policy' => :success)).to eq(described_class.new(unlock_policy: :success))
+    end
+
+    specify do
+      expect(described_class.coerce(timeout: 10)).to eq(described_class.new(timeout: 10))
+      expect(described_class.coerce('timeout' => 10)).to eq(described_class.new(timeout: 10))
+    end
+  end
+
+  describe '.created_at', freeze_at: [2020, 7, 1, 22, 24, 40] do
+    let(:now) { Time.now.to_f }
+
+    specify do
+      expect(described_class.new(timeout: 10).ttl).to eq(now + 10)
+      expect(described_class.new(timeout: 20).ttl).to eq(now + 20)
+    end
+  end
 end

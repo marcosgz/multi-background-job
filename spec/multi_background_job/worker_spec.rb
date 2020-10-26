@@ -105,6 +105,27 @@ RSpec.describe MultiBackgroundJob::Worker do
     end
   end
 
+  describe '.unique' do
+    specify do
+      worker = described_class.new('DummyWorker')
+      expect(worker.unique_job).to eq(nil)
+      expect(worker.unique(true)).to eq(worker)
+      expect(worker).to be_unique_job
+      expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
+      expect(worker.unique(false)).to eq(worker)
+      expect(worker.unique_job).to eq(nil)
+      expect(worker).not_to be_unique_job
+    end
+
+    specify do
+      worker = described_class.new('DummyWorker')
+      expect(worker.unique_job).to eq(nil)
+      expect(worker.unique(across: :systemwide)).to eq(worker)
+      expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
+      expect(worker).to be_unique_job
+    end
+  end
+
   describe '.unique_job' do
     let(:defaults) do
       {
@@ -261,41 +282,6 @@ RSpec.describe MultiBackgroundJob::Worker do
         worker = described_class.new('DummyWorker', service: :sidekiq)
         expect(MultiBackgroundJob::Adapters::Sidekiq).to receive(:push).with(worker).and_return('ok')
         expect(worker.push).to eq('ok')
-      end
-    end
-  end
-
-  describe '.acknowledge' do
-    specify do
-      expect { worker.acknowledge(to: :invalid) }.to raise_error(
-        MultiBackgroundJob::Error, 'Service :invalid is not implemented. Please use one of [:sidekiq, :faktory]'
-      )
-      expect(worker.job).to eq({})
-    end
-
-    context 'with faktory service' do
-      specify do
-        expect(MultiBackgroundJob::Adapters::Faktory).to receive(:acknowledge).with(worker).and_return('ok')
-        expect(worker.acknowledge(to: :faktory)).to eq('ok')
-      end
-
-      specify do
-        worker = described_class.new('DummyWorker', service: :faktory)
-        expect(MultiBackgroundJob::Adapters::Faktory).to receive(:acknowledge).with(worker).and_return('ok')
-        expect(worker.acknowledge).to eq('ok')
-      end
-    end
-
-    context 'with sidekiq service' do
-      specify do
-        expect(MultiBackgroundJob::Adapters::Sidekiq).to receive(:acknowledge).with(worker).and_return('ok')
-        expect(worker.acknowledge(to: :sidekiq)).to eq('ok')
-      end
-
-      specify do
-        worker = described_class.new('DummyWorker', service: :sidekiq)
-        expect(MultiBackgroundJob::Adapters::Sidekiq).to receive(:acknowledge).with(worker).and_return('ok')
-        expect(worker.acknowledge).to eq('ok')
       end
     end
   end

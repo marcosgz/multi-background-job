@@ -4,7 +4,60 @@ RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
   let(:ttl) { Time.now.to_f + HOUR_IN_SECONDS }
   let(:digest) { [MultiBackgroundJob.config.redis_namespace, 'multi-bg-test', 'uniqueness-lock'].join(':') }
   let(:job_id) { 'abc123' }
+  let(:lock_id) { job_id }
   let(:model) { described_class.new(digest: digest, ttl: ttl, job_id: job_id) }
+
+  describe '.coerce' do
+    specify do
+      expect(described_class.coerce(nil)).to eq(nil)
+      expect(described_class.coerce(false)).to eq(nil)
+      expect(described_class.coerce(true)).to eq(nil)
+      expect(described_class.coerce('')).to eq(nil)
+      expect(described_class.coerce(1)).to eq(nil)
+    end
+
+    specify do
+      expect(described_class.coerce(ttl: ttl, digest: digest, lock_id: lock_id)).to eq(
+        described_class.new(ttl: ttl, digest: digest, job_id: lock_id)
+      )
+    end
+
+    specify do
+      expect(described_class.coerce('ttl' => ttl, 'digest' => digest, 'lock_id' => lock_id)).to eq(
+        described_class.new(ttl: ttl, digest: digest, job_id: lock_id)
+      )
+    end
+
+    specify do
+      expect(described_class.coerce('ttl' => nil, 'digest' => digest, 'lock_id' => lock_id)).to eq(nil)
+      expect(described_class.coerce('ttl' => ttl, 'digest' => nil, 'lock_id' => lock_id)).to eq(nil)
+      expect(described_class.coerce('ttl' => ttl, 'digest' => digest, 'lock_id' => nil)).to eq(nil)
+    end
+  end
+
+  describe '.to_hash' do
+    subject { model.to_hash }
+
+    specify do
+      is_expected.to eq(
+        digest: digest,
+        ttl: ttl,
+        lock_id: lock_id,
+      )
+    end
+  end
+
+  describe '.as_json' do
+    subject { model.as_json }
+
+    specify do
+      is_expected.to eq(
+        'digest' => digest,
+        'ttl' => ttl,
+        'lock_id' => lock_id,
+      )
+    end
+  end
 
   describe '.lock' do
     specify do
