@@ -42,6 +42,8 @@ RSpec.describe MultiBackgroundJob::Middleware::UniqueJob, freeze_at: [2020, 7, 2
   end
 
   shared_examples 'unique job across' do |across|
+    subject(:push!) { worker.push(to: service) }
+
     context "with a unique job across #{across}" do
       let(:lock_digest) do
         MultiBackgroundJob::LockDigest.new(service, :mailer, across: across).to_s
@@ -133,8 +135,6 @@ RSpec.describe MultiBackgroundJob::Middleware::UniqueJob, freeze_at: [2020, 7, 2
   end
 
   describe '.call' do
-    subject(:push!) { worker.push(to: service) }
-
     before do
       described_class.bootstrap(service: service)
     end

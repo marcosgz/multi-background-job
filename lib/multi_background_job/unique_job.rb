@@ -40,13 +40,13 @@ module MultiBackgroundJob
     def self.coerce(value)
       return unless value.is_a?(Hash)
 
-      lock = MultiBackgroundJob::Lock.coerce(value['lock'] || value[:lock])
       new(
         across: (value['across'] || value[:across] || :queue).to_sym,
         timeout: (value['timeout'] || value[:timeout] || nil),
         unlock_policy: (value['unlock_policy'] || value[:unlock_policy] || :success).to_sym,
-        lock: lock,
-      )
+      ).tap do |instance|
+        instance.lock = value['lock'] || value[:lock]
+      end
     end
 
     def ttl
@@ -69,5 +69,14 @@ module MultiBackgroundJob
       [across, timeout, unlock_policy] == [other.across, other.timeout, other.unlock_policy]
     end
     alias == eql?
+
+    def lock=(value)
+      @lock = case value
+      when MultiBackgroundJob::Lock then value
+      when Hash then MultiBackgroundJob::Lock.coerce(value)
+      else
+        nil
+      end
+    end
   end
 end

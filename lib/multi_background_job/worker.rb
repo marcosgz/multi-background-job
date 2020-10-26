@@ -54,7 +54,13 @@ module MultiBackgroundJob
     # @return self
     def unique(value)
       value = {} if value == true
-      @unique_job = value.is_a?(Hash) ? UniqueJob.coerce(value) : nil
+      @unique_job = \
+        case value
+        when Hash then UniqueJob.coerce(value)
+        when UniqueJob then value
+        else
+          nil
+        end
 
       self
     end

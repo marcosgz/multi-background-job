@@ -124,6 +124,15 @@ RSpec.describe MultiBackgroundJob::Worker do
       expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
       expect(worker).to be_unique_job
     end
+
+    specify do
+      worker = described_class.new('DummyWorker')
+      expect(worker.unique_job).to eq(nil)
+      unique_job = MultiBackgroundJob::UniqueJob.new
+      expect(worker.unique(unique_job)).to eq(worker)
+      expect(worker.unique_job).to eq(unique_job)
+      expect(worker).to be_unique_job
+    end
   end
 
   describe '.unique_job' do

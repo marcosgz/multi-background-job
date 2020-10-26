@@ -205,4 +205,38 @@ RSpec.describe MultiBackgroundJob::UniqueJob do
       expect(described_class.new(timeout: 20).ttl).to eq(now + 20)
     end
   end
+
+  describe '.lock=' do
+    let(:model) { described_class.new }
+
+    specify do
+      expect(model.lock).to eq(nil)
+      model.lock = nil
+      expect(model.lock).to eq(nil)
+
+      model.lock = false
+      expect(model.lock).to eq(nil)
+
+      model.lock = ''
+      expect(model.lock).to eq(nil)
+    end
+
+    specify do
+      lock = MultiBackgroundJob::Lock.new(digest: 'digest', lock_id: 'jid', ttl: 10)
+      model.lock = lock
+      expect(model.lock).to eq(lock)
+    end
+
+    specify do
+      lock = MultiBackgroundJob::Lock.new(digest: 'digest', lock_id: 'jid', ttl: 10)
+      model.lock = { digest: 'digest', lock_id: 'jid', ttl: 10 }
+      expect(model.lock).to eq(lock)
+    end
+
+    specify do
+      lock = MultiBackgroundJob::Lock.new(digest: 'digest', lock_id: 'jid', ttl: 10)
+      model.lock = { 'digest' => 'digest', 'lock_id' => 'jid', 'ttl' => 10 }
+      expect(model.lock).to eq(lock)
+    end
+  end
 end

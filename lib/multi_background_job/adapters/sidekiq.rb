@@ -21,7 +21,7 @@ module MultiBackgroundJob
           'queue' => @queue,
           'created_at' => worker.job.fetch('created_at', Time.now.to_f),
         }
-        @payload['uniq'] = worker.job['uniq'] if worker.job['uniq']
+        @payload['uniq'] = worker.unique_job.to_hash if worker.unique_job
       end
 
       # Coerces the raw payload into an instance of Worker
