@@ -14,6 +14,21 @@ module MultiBackgroundJob
       @ttl = ttl
     end
 
+    # Initialize a Lock object from hash
+    #
+    # @param value [Hash] Hash with lock properties
+    # @return [MultiBackgroundJob::Lock, nil]
+    def self.coerce(value)
+      return unless value.is_a?(Hash)
+
+      digest = value[:digest] || value['digest']
+      lock_id = value[:lock_id] || value['lock_id']
+      ttl = value[:ttl] || value['ttl']
+      return if [digest, lock_id, ttl].any?(&:nil?)
+
+      new(digest: digest, job_id: lock_id, ttl: ttl)
+    end
+
     # Remove expired locks from redis "sorted set"
     #
     # @param [String] digest It's the uniq string used to group similar jobs
@@ -26,6 +41,20 @@ module MultiBackgroundJob
         caller.(redis)
       else
         MultiBackgroundJob.redis_pool.with { |conn| caller.(conn) }
+      end
+    end
+
+    def to_hash
+      {
+        ttl: ttl,
+        digest: digest,
+        lock_id: job_id,
+      }
+    end
+
+    def as_json
+      to_hash.each_with_object({}) do |(key, val), memo|
+        memo[key.to_s] = val.is_a?(Symbol) ? val.to_s : val
       end
     end
 
