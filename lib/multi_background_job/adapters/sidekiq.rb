@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../lock'
-
 module MultiBackgroundJob
   module Adapters
     # This is a Sidekiq adapter that converts MultiBackgroundJob::Worker object into a sidekiq readable format
@@ -55,7 +53,7 @@ module MultiBackgroundJob
       #   * If job has the 'at' key. Then schedule it
       #   * Otherwise enqueue for immediate execution
       #
-      # @return [Hash, NilClass] Payload that was sent to redis, or nil if job should be uniq and already exists
+      # @return [Hash] Payload that was sent to redis
       def push
         @payload['enqueued_at'] = Time.now.to_f
         if (timestamp = @payload.delete('at'))

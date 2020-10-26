@@ -9,3 +9,4 @@ gem 'awesome_print'
 gem 'dotenv'
 gem 'rspec'
 gem 'timecop'
+gem 'faktory_worker_ruby', require: false

@@ -23,7 +23,19 @@ RSpec.describe MultiBackgroundJob::Worker do
     specify do
       expect(worker.payload).to eq({})
       expect(worker.created_at(now)).to eq(worker)
-      expect(worker.payload).to eq('created_at' => now)
+      expect(worker.payload).to eq('created_at' => now.to_f)
+    end
+
+    specify do
+      expect(worker.payload).to eq({})
+      expect(worker.created_at(Time.now)).to eq(worker)
+      expect(worker.payload).to eq('created_at' => now.to_f)
+    end
+
+    specify do
+      expect(worker.payload).to eq({})
+      expect(worker.created_at(Time.now.to_datetime.rfc3339(9))).to eq(worker)
+      expect(worker.payload).to eq('created_at' => now.to_f)
     end
   end
 
@@ -33,7 +45,19 @@ RSpec.describe MultiBackgroundJob::Worker do
     specify do
       expect(worker.payload).to eq({})
       expect(worker.enqueued_at(now)).to eq(worker)
-      expect(worker.payload).to eq('enqueued_at' => now)
+      expect(worker.payload).to eq('enqueued_at' => now.to_f)
+    end
+
+    specify do
+      expect(worker.payload).to eq({})
+      expect(worker.enqueued_at(Time.now)).to eq(worker)
+      expect(worker.payload).to eq('enqueued_at' => now.to_f)
+    end
+
+    specify do
+      expect(worker.payload).to eq({})
+      expect(worker.enqueued_at(Time.now.to_datetime.rfc3339(9))).to eq(worker)
+      expect(worker.payload).to eq('enqueued_at' => now.to_f)
     end
   end
 
@@ -74,6 +98,12 @@ RSpec.describe MultiBackgroundJob::Worker do
 
     specify do
       expect(worker.payload).to eq({})
+      expect(worker.at((now + HOUR_IN_SECONDS).to_datetime.rfc3339(9))).to eq(worker)
+      expect(worker.payload).to eq('at' => now.to_f + 3_600, 'created_at' => now.to_f)
+    end
+
+    specify do
+      expect(worker.payload).to eq({})
       expect(worker.at(0)).to eq(worker)
       expect(worker.payload).to eq({})
       expect(worker.at(now - 1)).to eq(worker)
@@ -93,6 +123,12 @@ RSpec.describe MultiBackgroundJob::Worker do
     specify do
       expect(worker.payload).to eq({})
       expect(worker.in(now + HOUR_IN_SECONDS)).to eq(worker)
+      expect(worker.payload).to eq('at' => now.to_f + 3_600, 'created_at' => now.to_f)
+    end
+
+    specify do
+      expect(worker.payload).to eq({})
+      expect(worker.in((now + HOUR_IN_SECONDS).to_datetime.rfc3339(9))).to eq(worker)
       expect(worker.payload).to eq('at' => now.to_f + 3_600, 'created_at' => now.to_f)
     end
 

@@ -21,7 +21,14 @@ module MultiBackgroundJob
 
     %i[created_at enqueued_at].each do |method_name|
       define_method method_name do |value|
-        @payload[method_name.to_s] = value
+        @payload[method_name.to_s] = \
+          case value
+          when Numeric then value.to_f
+          when String then Time.parse(value).to_f
+          when Time, DateTime then value.to_f
+          else
+            raise ArgumentError, format('The %<v>p is not a valid value for %<m>s.', v: value, m: method_name)
+          end
 
         self
       end
@@ -36,10 +43,11 @@ module MultiBackgroundJob
     end
 
     # Schedule the time when a job will be executed. Jobs which are scheduled in the past are enqueued for immediate execution.
-    # @param timestamp [Number] timestamp, numeric or something that acts numeric.
+    # @param timestamp [Numeric] timestamp, numeric or something that acts numeric.
     # @return self
     def in(timestamp)
       now = Time.now.to_f
+      timestamp = Time.parse(timestamp) if timestamp.is_a?(String)
       int = timestamp.respond_to?(:strftime) ? timestamp.to_f : now + timestamp.to_f
       return self if int <= now
 

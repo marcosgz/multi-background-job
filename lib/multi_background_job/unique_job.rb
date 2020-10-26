@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative './lock'
+
 module MultiBackgroundJob
   class UniqueJob
     VALID_OPTIONS = {

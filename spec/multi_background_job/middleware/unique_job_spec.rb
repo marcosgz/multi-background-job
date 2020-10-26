@@ -22,7 +22,7 @@ RSpec.describe MultiBackgroundJob::Middleware::UniqueJob, freeze_at: [2020, 7, 2
     it 'does not load UniqueJob middleware and raise an error' do
       expect { described_class.bootstrap(service: :invalid) }.to raise_error(
         MultiBackgroundJob::Error,
-        %[UniqueJob is not supported for the `:invalid' service. Supported options are: `:sidekiq'.]
+        %[UniqueJob is not supported for the `:invalid' service. Supported options are: `:sidekiq', `:faktory'.]
       )
       expect(MultiBackgroundJob.config.middleware.exists?(described_class)).to eq(false)
     end

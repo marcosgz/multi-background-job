@@ -39,7 +39,7 @@ RSpec.describe 'MultiBackgroundJob::Workers::Faktory' do
       let(:job_module) { Module.new }
 
       before do
-        Object.const_set(:Faktory, Class.new do
+        stub_const('Faktory', Class.new do
           def self.default_job_options
             {
               'queue' => 'dummy',
@@ -47,11 +47,7 @@ RSpec.describe 'MultiBackgroundJob::Workers::Faktory' do
             }
           end
         end)
-        Object.const_get(:Faktory).const_set(:Job, job_module)
-      end
-
-      after do
-        Object.send(:remove_const, :Faktory) if Object.constants.include?(:Faktory)
+        stub_const('Faktory::Job', job_module)
       end
 
       let(:worker) do
@@ -81,10 +77,6 @@ RSpec.describe 'MultiBackgroundJob::Workers::Faktory' do
         expect(worker.bg_worker_options).to eq({
           service: :faktory,
         })
-      end
-
-      specify do
-        expect(worker.included_modules).to include(job_module)
       end
     end
 
