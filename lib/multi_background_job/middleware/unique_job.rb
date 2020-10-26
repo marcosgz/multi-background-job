@@ -31,7 +31,7 @@ module MultiBackgroundJob
 
           # Add unique job information to the job payload
           worker.unique_job.lock = uniq_lock
-          worker.job['uniq'] = worker.unique_job.to_hash
+          worker.payload['uniq'] = worker.unique_job.to_hash
 
           uniq_lock.lock
         end
@@ -57,7 +57,7 @@ module MultiBackgroundJob
       end
 
       def unique_job_lock_id(worker)
-        identifier_data = [worker.worker_class, worker.job.fetch('args'.freeze, [])]
+        identifier_data = [worker.worker_class, worker.payload.fetch('args'.freeze, [])]
         Digest::SHA256.hexdigest(
           MultiJson.dump(identifier_data, mode: :compat),
         )

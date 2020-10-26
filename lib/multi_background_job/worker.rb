@@ -4,12 +4,14 @@ require_relative './unique_job'
 
 module MultiBackgroundJob
   class Worker
-    attr_reader :options, :job, :worker_class, :unique_job
+    attr_reader :options, :payload, :worker_class, :unique_job
+
+    attr_reader :arguments
 
     def initialize(worker_class, **options)
       @worker_class = worker_class
       @options = options
-      @job = {} # @IDEA Convert @job hash to a Struct
+      @payload = {}
       unique(@options.delete(:uniq)) if @options.key?(:uniq)
     end
 
@@ -19,7 +21,7 @@ module MultiBackgroundJob
 
     %i[created_at enqueued_at].each do |method_name|
       define_method method_name do |value|
-        @job[method_name.to_s] = value
+        @payload[method_name.to_s] = value
 
         self
       end
@@ -28,7 +30,7 @@ module MultiBackgroundJob
     # Adds arguments to the job
     # @return self
     def with_args(*args)
-      @job['args'.freeze] = args
+      @payload['args'] = args
 
       self
     end
@@ -41,8 +43,8 @@ module MultiBackgroundJob
       int = timestamp.respond_to?(:strftime) ? timestamp.to_f : now + timestamp.to_f
       return self if int <= now
 
-      @job['at'.freeze] = int
-      @job['created_at'.freeze] = now
+      @payload['at'] = int
+      @payload['created_at'] = now
 
       self
     end
@@ -66,7 +68,7 @@ module MultiBackgroundJob
     end
 
     def with_job_jid(jid = nil)
-      @job['jid'.freeze] ||= jid || MultiBackgroundJob.jid
+      @payload['jid'] ||= jid || MultiBackgroundJob.jid
 
       self
     end
@@ -80,7 +82,7 @@ module MultiBackgroundJob
         raise Error, format('Service %<to>p is not implemented. Please use one of %<list>p', to: to, list: SERVICES.keys)
       end
 
-      @job['created_at'.freeze] ||= Time.now.to_f
+      @payload['created_at'] ||= Time.now.to_f
       worker_to_push = with_job_jid
       MultiBackgroundJob.config.middleware.invoke(worker_to_push, to) do
         SERVICES[to].push(worker_to_push)
@@ -91,7 +93,7 @@ module MultiBackgroundJob
       return false unless other.is_a?(self.class)
 
       worker_class == other.worker_class && \
-        job == other.job &&
+        payload == other.payload &&
         options == other.options &&
         unique_job == other.unique_job
     end

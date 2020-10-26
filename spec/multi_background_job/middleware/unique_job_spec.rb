@@ -73,7 +73,7 @@ RSpec.describe MultiBackgroundJob::Middleware::UniqueJob, freeze_at: [2020, 7, 2
           ttl = conn.zscore(lock_digest, lock_id)
           expect(ttl.to_i).to eq(now.to_i+1)
 
-          job = worker.job.merge(
+          job = worker.payload.merge(
             'uniq' => {
               'across' => across.to_s,
               'timeout' => 3_600,

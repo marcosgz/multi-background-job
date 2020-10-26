@@ -21,9 +21,9 @@ RSpec.describe MultiBackgroundJob::Worker do
     let(:now) { Time.now }
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.created_at(now)).to eq(worker)
-      expect(worker.job).to eq('created_at' => now)
+      expect(worker.payload).to eq('created_at' => now)
     end
   end
 
@@ -31,29 +31,29 @@ RSpec.describe MultiBackgroundJob::Worker do
     let(:now) { Time.now }
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.enqueued_at(now)).to eq(worker)
-      expect(worker.job).to eq('enqueued_at' => now)
+      expect(worker.payload).to eq('enqueued_at' => now)
     end
   end
 
   describe '.with_args' do
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.with_args()).to eq(worker)
-      expect(worker.job).to eq('args' => [])
+      expect(worker.payload).to eq('args' => [])
     end
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.with_args(1)).to eq(worker)
-      expect(worker.job).to eq('args' => [1])
+      expect(worker.payload).to eq('args' => [1])
     end
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.with_args(1, foo: :bar)).to eq(worker)
-      expect(worker.job).to eq('args' => [1, { foo: :bar }])
+      expect(worker.payload).to eq('args' => [1, { foo: :bar }])
     end
   end
 
@@ -61,23 +61,23 @@ RSpec.describe MultiBackgroundJob::Worker do
     let(:now) { Time.now }
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.at(10)).to eq(worker)
-      expect(worker.job).to eq('at' => now.to_f + 10, 'created_at' => now.to_f)
+      expect(worker.payload).to eq('at' => now.to_f + 10, 'created_at' => now.to_f)
     end
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.at(now + HOUR_IN_SECONDS)).to eq(worker)
-      expect(worker.job).to eq('at' => now.to_f + 3_600, 'created_at' => now.to_f)
+      expect(worker.payload).to eq('at' => now.to_f + 3_600, 'created_at' => now.to_f)
     end
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.at(0)).to eq(worker)
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.at(now - 1)).to eq(worker)
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
     end
   end
 
@@ -85,23 +85,23 @@ RSpec.describe MultiBackgroundJob::Worker do
     let(:now) { Time.now }
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.in(10)).to eq(worker)
-      expect(worker.job).to eq('at' => now.to_f + 10, 'created_at' => now.to_f)
+      expect(worker.payload).to eq('at' => now.to_f + 10, 'created_at' => now.to_f)
     end
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.in(now + HOUR_IN_SECONDS)).to eq(worker)
-      expect(worker.job).to eq('at' => now.to_f + 3_600, 'created_at' => now.to_f)
+      expect(worker.payload).to eq('at' => now.to_f + 3_600, 'created_at' => now.to_f)
     end
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.in(0)).to eq(worker)
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.in(now - 1)).to eq(worker)
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
     end
   end
 
@@ -146,28 +146,28 @@ RSpec.describe MultiBackgroundJob::Worker do
 
     specify do
       worker = described_class.new('DummyWorker')
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.options).to eq({})
       expect(worker.unique_job).to eq(nil)
     end
 
     specify do
       worker = described_class.new('DummyWorker', uniq: {})
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.options).to eq({})
       expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
     end
 
     specify do
       worker = described_class.new('DummyWorker', uniq: true)
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.options).to eq({})
       expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
     end
 
     specify do
       worker = described_class.new('DummyWorker', uniq: false)
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect(worker.options).to eq({})
       expect(worker.unique_job).to eq(nil)
     end
@@ -188,7 +188,7 @@ RSpec.describe MultiBackgroundJob::Worker do
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { across: :systemwide })
-        expect(worker.job).to eq({})
+        expect(worker.payload).to eq({})
         expect(worker.options).to eq({})
         expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
         expect(worker.unique_job.across).to eq(:systemwide)
@@ -196,7 +196,7 @@ RSpec.describe MultiBackgroundJob::Worker do
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { across: 'systemwide' })
-        expect(worker.job).to eq({})
+        expect(worker.payload).to eq({})
         expect(worker.options).to eq({})
         expect(worker.unique_job.across).to eq(:systemwide)
       end
@@ -211,7 +211,7 @@ RSpec.describe MultiBackgroundJob::Worker do
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { unlock_policy: :success })
-        expect(worker.job).to eq({})
+        expect(worker.payload).to eq({})
         expect(worker.options).to eq({})
         expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
         expect(worker.unique_job.unlock_policy).to eq(:success)
@@ -219,7 +219,7 @@ RSpec.describe MultiBackgroundJob::Worker do
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { unlock_policy: :start })
-        expect(worker.job).to eq({})
+        expect(worker.payload).to eq({})
         expect(worker.options).to eq({})
         expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
         expect(worker.unique_job.unlock_policy).to eq(:start)
@@ -227,7 +227,7 @@ RSpec.describe MultiBackgroundJob::Worker do
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { unlock_policy: 'start' })
-        expect(worker.job).to eq({})
+        expect(worker.payload).to eq({})
         expect(worker.options).to eq({})
         expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
         expect(worker.unique_job.unlock_policy).to eq(:start)
@@ -237,7 +237,7 @@ RSpec.describe MultiBackgroundJob::Worker do
     context 'with custom :timeout option' do
       specify do
         worker = described_class.new('DummyWorker', uniq: { timeout: -1 })
-        expect(worker.job).to eq({})
+        expect(worker.payload).to eq({})
         expect(worker.options).to eq({})
         expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
         expect(worker.unique_job.timeout).to eq(defaults[:timeout])
@@ -245,7 +245,7 @@ RSpec.describe MultiBackgroundJob::Worker do
 
       specify do
         worker = described_class.new('DummyWorker', uniq: { timeout: 10 })
-        expect(worker.job).to eq({})
+        expect(worker.payload).to eq({})
         expect(worker.options).to eq({})
         expect(worker.unique_job).to be_an_instance_of(MultiBackgroundJob::UniqueJob)
         expect(worker.unique_job.timeout).to eq(10)
@@ -257,11 +257,11 @@ RSpec.describe MultiBackgroundJob::Worker do
     let(:now) { Time.now }
 
     specify do
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
       expect { worker.push(to: :invalid) }.to raise_error(
         MultiBackgroundJob::Error, 'Service :invalid is not implemented. Please use one of [:sidekiq, :faktory]'
       )
-      expect(worker.job).to eq({})
+      expect(worker.payload).to eq({})
     end
 
     context 'with faktory service' do
@@ -269,7 +269,7 @@ RSpec.describe MultiBackgroundJob::Worker do
         expect(MultiBackgroundJob).to receive(:jid).and_return('123xyz')
         expect(MultiBackgroundJob::Adapters::Faktory).to receive(:push).with(worker).and_return('ok')
         expect(worker.push(to: :faktory)).to eq('ok')
-        expect(worker.job).to eq('jid' => '123xyz', 'created_at' => now.to_f)
+        expect(worker.payload).to eq('jid' => '123xyz', 'created_at' => now.to_f)
       end
 
       specify do
@@ -284,7 +284,7 @@ RSpec.describe MultiBackgroundJob::Worker do
         expect(MultiBackgroundJob).to receive(:jid).and_return('123xyz')
         expect(MultiBackgroundJob::Adapters::Sidekiq).to receive(:push).with(worker).and_return('ok')
         expect(worker.push(to: :sidekiq)).to eq('ok')
-        expect(worker.job).to eq('jid' => '123xyz', 'created_at' => now.to_f)
+        expect(worker.payload).to eq('jid' => '123xyz', 'created_at' => now.to_f)
       end
 
       specify do

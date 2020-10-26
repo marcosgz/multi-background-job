@@ -13,15 +13,12 @@ module MultiBackgroundJob
         @worker = worker
         @queue = worker.options.fetch(:queue, 'default')
 
-        @payload = {
+        @payload = worker.payload.merge(
           'class' => worker.worker_class,
-          'args'  => worker.job.fetch('args', []),
-          'jid'   => worker.job.fetch('jid'),
           'retry' => worker.options.fetch(:retry, true),
           'queue' => @queue,
-          'created_at' => worker.job.fetch('created_at', Time.now.to_f),
-        }
-        @payload['uniq'] = worker.unique_job.to_hash if worker.unique_job
+        )
+        @payload['created_at'] ||= Time.now.to_f
       end
 
       # Coerces the raw payload into an instance of Worker
@@ -61,7 +58,7 @@ module MultiBackgroundJob
       # @return [Hash, NilClass] Payload that was sent to redis, or nil if job should be uniq and already exists
       def push
         @payload['enqueued_at'] = Time.now.to_f
-        if (timestamp = worker.job['at'])
+        if (timestamp = @payload.delete('at'))
           MultiBackgroundJob.redis_pool.with do |redis|
             redis.zadd(scheduled_queue_name, timestamp.to_f.to_s, to_json(@payload))
           end
