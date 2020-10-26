@@ -26,8 +26,8 @@ module MultiBackgroundJob
           # @param queue [String] the name of the queue the job was pulled from
           # @yield the next middleware in the chain or worker `perform` method
           # @return [Void]
-          def call(worker, job, _queue)
-            if job.is_a?(Hash) && (unique_lock = unique_job_lock(worker.class.name, job))
+          def call(_worker, job, _queue)
+            if job.is_a?(Hash) && (unique_lock = unique_job_lock(job))
               unique_lock.unlock
             end
             yield
@@ -35,7 +35,7 @@ module MultiBackgroundJob
 
           protected
 
-          def unique_job_lock(worker_class, job)
+          def unique_job_lock(job)
             return unless job['uniq'].is_a?(Hash)
 
             unique_job = ::MultiBackgroundJob::UniqueJob.coerce(job['uniq'])
