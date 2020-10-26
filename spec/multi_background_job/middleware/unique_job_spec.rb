@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'multi_background_Job/middleware/unique_job'
+require 'multi_background_job/middleware/unique_job'
 
 RSpec.describe MultiBackgroundJob::Middleware::UniqueJob, freeze_at: [2020, 7, 2, 12, 30, 50] do
   let(:worker_class) do
