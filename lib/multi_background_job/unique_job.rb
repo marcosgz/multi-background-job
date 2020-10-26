@@ -49,27 +49,17 @@ module MultiBackgroundJob
       )
     end
 
-    def to_hash
-      {
-        across: across,
-        timeout: timeout,
-        unlock_policy: unlock_policy,
-      }.tap do |hash|
-        hash[:lock] = lock.to_hash if lock
-      end
-    end
-
     def ttl
       Time.now.to_f + timeout
     end
 
-    def as_json
+    def to_hash
       {
         'across' => (across.to_s if across),
         'timeout' => timeout,
         'unlock_policy' => (unlock_policy.to_s if unlock_policy),
       }.tap do |hash|
-        hash['lock'] = lock.as_json if lock
+        hash['lock'] = lock.to_hash if lock
       end
     end
 

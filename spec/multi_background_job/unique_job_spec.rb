@@ -85,52 +85,6 @@ RSpec.describe MultiBackgroundJob::UniqueJob do
 
       specify do
         is_expected.to eq(
-          across: across_option,
-          timeout: timeout_option,
-          unlock_policy: unlock_policy_option,
-        )
-      end
-    end
-
-    context 'with custom options' do
-      let(:model) { described_class.new(across: 'systemwide', timeout: 10, unlock_policy: 'start') }
-
-      specify do
-        is_expected.to eq(
-          across: :systemwide,
-          timeout: 10,
-          unlock_policy: :start,
-        )
-      end
-    end
-
-    context 'with lock data' do
-      let(:lock) { MultiBackgroundJob::Lock.new(digest: 'digest', lock_id: 'jid', ttl: 10) }
-      let(:model) { described_class.new(across: 'systemwide', timeout: 10, unlock_policy: 'start', lock: lock) }
-
-      specify do
-        is_expected.to eq(
-          across: :systemwide,
-          timeout: 10,
-          unlock_policy: :start,
-          lock: {
-            digest: 'digest',
-            lock_id: 'jid',
-            ttl: 10,
-          },
-        )
-      end
-    end
-  end
-
-  describe '.as_json' do
-    subject { model.as_json }
-
-    context 'with default options' do
-      let(:model) { described_class.new }
-
-      specify do
-        is_expected.to eq(
           'across' => across_option.to_s,
           'timeout' => timeout_option,
           'unlock_policy' => unlock_policy_option.to_s,

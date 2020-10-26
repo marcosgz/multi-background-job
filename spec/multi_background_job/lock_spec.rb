@@ -39,18 +39,6 @@ RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
 
     specify do
       is_expected.to eq(
-        digest: digest,
-        ttl: ttl,
-        lock_id: lock_id,
-      )
-    end
-  end
-
-  describe '.as_json' do
-    subject { model.as_json }
-
-    specify do
-      is_expected.to eq(
         'digest' => digest.to_s,
         'ttl' => ttl,
         'lock_id' => lock_id.to_s,

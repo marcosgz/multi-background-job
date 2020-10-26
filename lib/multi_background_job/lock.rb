@@ -46,14 +46,6 @@ module MultiBackgroundJob
 
     def to_hash
       {
-        ttl: ttl,
-        digest: digest,
-        lock_id: lock_id,
-      }
-    end
-
-    def as_json
-      {
         'ttl' => ttl,
         'digest' => (digest.to_s if digest),
         'lock_id' => (lock_id.to_s if lock_id),
