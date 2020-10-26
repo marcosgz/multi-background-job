@@ -42,9 +42,6 @@ module MultiBackgroundJob
           worker.enqueued_at(payload['enqueued_at']) if payload.key?('enqueued_at')
           worker.at(payload['at']) if payload.key?('at')
           worker.unique(payload['uniq']) if payload.key?('uniq')
-          if payload.key?('custom') && (custom_value = payload['custom']).is_a?(Hash)
-            custom_value.each { |k, v| worker.with_custom(k, v) }
-          end
         end
       end
 

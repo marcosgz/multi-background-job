@@ -59,19 +59,6 @@ module MultiBackgroundJob
       self
     end
 
-    # Add a custom value to the job. it's useful to store addicional information such as unique job information
-    #
-    # @param key [String, Symbol] the key for the given value
-    # @return self
-    def with_custom(key, value)
-      return self unless key
-
-      @job['custom'.freeze] ||= {}
-      @job['custom'.freeze][key.to_s] = value
-
-      self
-    end
-
     def with_job_jid(jid = nil)
       @job['jid'.freeze] ||= jid || MultiBackgroundJob.jid
 

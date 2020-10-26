@@ -37,30 +37,6 @@ RSpec.describe MultiBackgroundJob::Worker do
     end
   end
 
-  describe '.with_custom' do
-    specify do
-      expect(worker.job).to eq({})
-      expect(worker.with_custom(nil, nil)).to eq(worker)
-      expect(worker.job).to eq({})
-    end
-
-    specify do
-      expect(worker.job).to eq({})
-      expect(worker.with_custom(:key, true)).to eq(worker)
-      expect(worker.job).to eq('custom' => { 'key' => true })
-      expect(worker.with_custom(:key, false)).to eq(worker)
-      expect(worker.job).to eq('custom' => { 'key' => false })
-    end
-
-    specify do
-      expect(worker.job).to eq({})
-      expect(worker.with_custom('one', 1)).to eq(worker)
-      expect(worker.job).to eq('custom' => { 'one' => 1 })
-      expect(worker.with_custom('two', 2)).to eq(worker)
-      expect(worker.job).to eq('custom' => { 'one' => 1, 'two' => 2 })
-    end
-  end
-
   describe '.with_args' do
     specify do
       expect(worker.job).to eq({})
