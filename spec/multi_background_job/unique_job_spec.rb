@@ -103,6 +103,24 @@ RSpec.describe MultiBackgroundJob::UniqueJob do
         )
       end
     end
+
+    context 'with lock data' do
+      let(:lock) { MultiBackgroundJob::Lock.new(digest: 'digest', lock_id: 'jid', ttl: 10) }
+      let(:model) { described_class.new(across: 'systemwide', timeout: 10, unlock_policy: 'start', lock: lock) }
+
+      specify do
+        is_expected.to eq(
+          across: :systemwide,
+          timeout: 10,
+          unlock_policy: :start,
+          lock: {
+            digest: 'digest',
+            lock_id: 'jid',
+            ttl: 10,
+          },
+        )
+      end
+    end
   end
 
   describe '.as_json' do
@@ -128,6 +146,24 @@ RSpec.describe MultiBackgroundJob::UniqueJob do
           'across' => 'systemwide',
           'timeout' => 10,
           'unlock_policy' => 'start',
+        )
+      end
+    end
+
+    context 'with lock data' do
+      let(:lock) { MultiBackgroundJob::Lock.new(digest: 'digest', lock_id: 'jid', ttl: 10) }
+      let(:model) { described_class.new(across: 'systemwide', timeout: 10, unlock_policy: 'start', lock: lock) }
+
+      specify do
+        is_expected.to eq(
+          'across' => 'systemwide',
+          'timeout' => 10,
+          'unlock_policy' => 'start',
+          'lock' => {
+            'digest' => 'digest',
+            'lock_id' => 'jid',
+            'ttl' => 10,
+          },
         )
       end
     end
@@ -190,6 +226,20 @@ RSpec.describe MultiBackgroundJob::UniqueJob do
     specify do
       expect(described_class.coerce(timeout: 10)).to eq(described_class.new(timeout: 10))
       expect(described_class.coerce('timeout' => 10)).to eq(described_class.new(timeout: 10))
+    end
+
+    context 'with lock data' do
+      specify do
+        model = described_class.coerce(lock: { digest:'digest', lock_id:'jid', ttl:10 })
+        expect(model).to be_an_instance_of(described_class)
+        expect(model.lock).to eq(MultiBackgroundJob::Lock.new(digest:'digest', lock_id:'jid', ttl:10))
+      end
+
+      specify do
+        model = described_class.coerce('lock' => { 'digest' => 'digest', 'lock_id' => 'jid', 'ttl' => 10 })
+        expect(model).to be_an_instance_of(described_class)
+        expect(model.lock).to eq(MultiBackgroundJob::Lock.new(digest:'digest', lock_id:'jid', ttl:10))
+      end
     end
   end
 

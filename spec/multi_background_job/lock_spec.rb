@@ -3,9 +3,8 @@ require 'spec_helper'
 RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
   let(:ttl) { Time.now.to_f + HOUR_IN_SECONDS }
   let(:digest) { [MultiBackgroundJob.config.redis_namespace, 'multi-bg-test', 'uniqueness-lock'].join(':') }
-  let(:job_id) { 'abc123' }
-  let(:lock_id) { job_id }
-  let(:model) { described_class.new(digest: digest, ttl: ttl, job_id: job_id) }
+  let(:lock_id) { 'abc123' }
+  let(:model) { described_class.new(digest: digest, ttl: ttl, lock_id: lock_id) }
 
   describe '.coerce' do
     specify do
@@ -18,13 +17,13 @@ RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
 
     specify do
       expect(described_class.coerce(ttl: ttl, digest: digest, lock_id: lock_id)).to eq(
-        described_class.new(ttl: ttl, digest: digest, job_id: lock_id)
+        described_class.new(ttl: ttl, digest: digest, lock_id: lock_id)
       )
     end
 
     specify do
       expect(described_class.coerce('ttl' => ttl, 'digest' => digest, 'lock_id' => lock_id)).to eq(
-        described_class.new(ttl: ttl, digest: digest, job_id: lock_id)
+        described_class.new(ttl: ttl, digest: digest, lock_id: lock_id)
       )
     end
 
@@ -52,9 +51,9 @@ RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
 
     specify do
       is_expected.to eq(
-        'digest' => digest,
+        'digest' => digest.to_s,
         'ttl' => ttl,
-        'lock_id' => lock_id,
+        'lock_id' => lock_id.to_s,
       )
     end
   end
@@ -82,7 +81,7 @@ RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
 
         Timecop.travel(travel_to) do
           new_ttl = ttl + HOUR_IN_SECONDS
-          new_model = described_class.new(digest: model.digest, job_id: model.job_id, ttl: new_ttl)
+          new_model = described_class.new(digest: model.digest, lock_id: model.lock_id, ttl: new_ttl)
           expect(new_model.lock).to eq(false)
           expect(conn.zcount(digest, 0, new_ttl)).to eq(1)
           expect(conn.zcount(digest, 0, ttl)).to eq(0)
@@ -98,7 +97,7 @@ RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
         expect(conn.zcount(digest, 0, ttl)).to eq(0)
         expect(model.unlock).to eq(false)
 
-        conn.zadd(digest, ttl, job_id)
+        conn.zadd(digest, ttl, lock_id)
         expect(conn.zcount(digest, 0, ttl)).to eq(1)
 
         expect(model.unlock).to eq(true)
@@ -113,7 +112,7 @@ RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
         conn.del(digest)
         expect(model.locked?).to eq(false)
 
-        conn.zadd(digest, ttl, job_id)
+        conn.zadd(digest, ttl, lock_id)
         expect(model.locked?).to eq(true)
 
         expect(model.unlock).to eq(true)
@@ -126,7 +125,7 @@ RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
         conn.del(digest)
         expect(model.locked?).to eq(false)
 
-        conn.zadd(digest, ttl, job_id)
+        conn.zadd(digest, ttl, lock_id)
         expect(model.locked?).to eq(true)
 
         travel_to = Time.at(ttl)
@@ -161,8 +160,8 @@ RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
 
     specify do
       MultiBackgroundJob.redis_pool.with do |conn|
-        lock_queue1 = described_class.new(digest: digest + '1', ttl: ttl, job_id: job_id).tap(&:lock)
-        lock_queue2 = described_class.new(digest: digest + '2', ttl: ttl, job_id: job_id).tap(&:lock)
+        lock_queue1 = described_class.new(digest: digest + '1', ttl: ttl, lock_id: lock_id).tap(&:lock)
+        lock_queue2 = described_class.new(digest: digest + '2', ttl: ttl, lock_id: lock_id).tap(&:lock)
         expect(conn.zcount(lock_queue1.digest, 0, ttl)).to eq(1)
         expect(conn.zcount(lock_queue2.digest, 0, ttl)).to eq(1)
 

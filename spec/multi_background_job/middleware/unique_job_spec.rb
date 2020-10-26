@@ -76,9 +76,11 @@ RSpec.describe MultiBackgroundJob::Middleware::UniqueJob, freeze_at: [2020, 7, 2
               'across' => across.to_s,
               'timeout' => 3_600,
               'unlock_policy' => 'success',
-              'ttl' => now + 3_600,
-              'digest' => lock_digest,
-              'lock_id' => lock_id,
+              'lock' => {
+                'ttl' => now + 3_600,
+                'digest' => lock_digest,
+                'lock_id' => lock_id,
+              }
             }
           )
 
@@ -99,16 +101,16 @@ RSpec.describe MultiBackgroundJob::Middleware::UniqueJob, freeze_at: [2020, 7, 2
           expect(result.dig('uniq', 'across')).to eq(across.to_s)
           expect(result.dig('uniq', 'timeout')).to eq(3_600)
           expect(result.dig('uniq', 'unlock_policy')).to eq('success')
-          expect(result.dig('uniq', 'ttl')).to eq(now + 3_600)
-          expect(result.dig('uniq', 'digest')).to eq(lock_digest)
-          expect(result.dig('uniq', 'lock_id')).to be_a_kind_of(String)
+          expect(result.dig('uniq', 'lock', 'ttl')).to eq(now + 3_600)
+          expect(result.dig('uniq', 'lock', 'digest')).to eq(lock_digest)
+          expect(result.dig('uniq', 'lock', 'lock_id')).to be_a_kind_of(String)
 
           expect(conn.llen(sidekiq_immediate_name)).to eq(1)
           expect(conn.zcount(lock_digest, 0, now + DAY_IN_SECONDS)).to eq(1)
 
           lock_id = conn.zrangebyscore(lock_digest, now + 3_600, now + 3_600)[0]
           expect(lock_id).to be_a_kind_of(String)
-          expect(result.dig('uniq', 'lock_id')).to eq(lock_id)
+          expect(result.dig('uniq', 'lock', 'lock_id')).to eq(lock_id)
 
           # Adds more expired jobs to be flushed
           conn.zadd(lock_digest, now-2, '123')

@@ -40,11 +40,12 @@ module MultiBackgroundJob
     def self.coerce(value)
       return unless value.is_a?(Hash)
 
+      lock = MultiBackgroundJob::Lock.coerce(value['lock'] || value[:lock])
       new(
         across: (value['across'] || value[:across] || :queue).to_sym,
         timeout: (value['timeout'] || value[:timeout] || nil),
         unlock_policy: (value['unlock_policy'] || value[:unlock_policy] || :success).to_sym,
-        lock: MultiBackgroundJob::Lock.coerce(value),
+        lock: lock,
       )
     end
 
@@ -53,7 +54,9 @@ module MultiBackgroundJob
         across: across,
         timeout: timeout,
         unlock_policy: unlock_policy,
-      }
+      }.tap do |hash|
+        hash[:lock] = lock.to_hash if lock
+      end
     end
 
     def ttl
@@ -61,8 +64,12 @@ module MultiBackgroundJob
     end
 
     def as_json
-      to_hash.each_with_object({}) do |(key, val), memo|
-        memo[key.to_s] = val.is_a?(Symbol) ? val.to_s : val
+      {
+        'across' => (across.to_s if across),
+        'timeout' => timeout,
+        'unlock_policy' => (unlock_policy.to_s if unlock_policy),
+      }.tap do |hash|
+        hash['lock'] = lock.as_json if lock
       end
     end
 

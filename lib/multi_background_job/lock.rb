@@ -3,14 +3,14 @@
 module MultiBackgroundJob
   # Class Lock provides access to redis "sorted set" used to control unique jobs
   class Lock
-    attr_reader :digest, :job_id, :ttl
+    attr_reader :digest, :lock_id, :ttl
 
     # @param :digest [String] It's the uniq string used to group similar jobs
-    # @param :job_id [String] The uniq job id
+    # @param :lock_id [String] The uniq job id
     # @param :ttl [Float] The timestamp related lifietime of the lock before being discarded.
-    def initialize(digest:, job_id:, ttl:)
+    def initialize(digest:, lock_id:, ttl:)
       @digest = digest
-      @job_id = job_id
+      @lock_id = lock_id
       @ttl = ttl
     end
 
@@ -26,7 +26,7 @@ module MultiBackgroundJob
       ttl = value[:ttl] || value['ttl']
       return if [digest, lock_id, ttl].any?(&:nil?)
 
-      new(digest: digest, job_id: lock_id, ttl: ttl)
+      new(digest: digest, lock_id: lock_id, ttl: ttl)
     end
 
     # Remove expired locks from redis "sorted set"
@@ -48,14 +48,16 @@ module MultiBackgroundJob
       {
         ttl: ttl,
         digest: digest,
-        lock_id: job_id,
+        lock_id: lock_id,
       }
     end
 
     def as_json
-      to_hash.each_with_object({}) do |(key, val), memo|
-        memo[key.to_s] = val.is_a?(Symbol) ? val.to_s : val
-      end
+      {
+        'ttl' => ttl,
+        'digest' => (digest.to_s if digest),
+        'lock_id' => (lock_id.to_s if lock_id),
+      }
     end
 
     # @return [Float] A float timestamp of current time
@@ -63,29 +65,29 @@ module MultiBackgroundJob
       Time.now.to_f
     end
 
-    # Remove job_id lock from redis
+    # Remove lock_id lock from redis
     # @return [Boolean] Returns true when it's locked or false when there is no lock
     def unlock
       MultiBackgroundJob.redis_pool.with do |conn|
-        conn.zrem(digest, job_id)
+        conn.zrem(digest, lock_id)
       end
     end
 
-    # Adds job_id lock to redis
+    # Adds lock_id lock to redis
     # @return [Boolean] Returns true when it's a fresh lock or false when lock already exists
     def lock
       MultiBackgroundJob.redis_pool.with do |conn|
-        conn.zadd(digest, ttl, job_id)
+        conn.zadd(digest, ttl, lock_id)
       end
     end
 
-    # Check if the job_id lock exist
+    # Check if the lock_id lock exist
     # @return [Boolean] true or false when lock exist or not
     def locked?
       locked = false
 
       MultiBackgroundJob.redis_pool.with do |conn|
-        timestamp = conn.zscore(digest, job_id)
+        timestamp = conn.zscore(digest, lock_id)
         return false unless timestamp
 
         locked = timestamp >= now
@@ -98,7 +100,7 @@ module MultiBackgroundJob
     def eql?(other)
       return false unless other.is_a?(self.class)
 
-      [digest, job_id, ttl] == [other.digest, other.job_id, other.ttl]
+      [digest, lock_id, ttl] == [other.digest, other.lock_id, other.ttl]
     end
     alias == eql?
 
