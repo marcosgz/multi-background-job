@@ -16,14 +16,7 @@ module MultiBackgroundJob
           'queue'   => @queue,
           'retry'   => parse_retry(worker.options[:retry]),
         )
-        if time = @payload.delete('created_at')
-          @payload['created_at'] = parse_time(time)
-        end
-        @payload['created_at'] ||= parse_time(Time.now)
-
-        if time = @payload.delete('at')
-          @payload['at'] = parse_time(time)
-        end
+        @payload['created_at'] ||= Time.now.to_f
       end
 
       # Coerces the raw payload into an instance of Worker
@@ -68,7 +61,14 @@ module MultiBackgroundJob
           Faktory client for ruby is not loaded. You must install and require https://github.com/contribsys/faktory_worker_ruby.
           ERR
         end
-        @payload['enqueued_at'] = parse_time(Time.now)
+        @payload['enqueued_at'] ||= Time.now.to_f
+        {'created_at' => false, 'enqueued_at' => false, 'at' => true}.each do |field, past_remove|
+          # Optimization to enqueue something now that is scheduled to go out now or in the past
+          if (time = @payload.delete(field)) &&
+              (!past_remove || (past_remove && time > Time.now.to_f))
+            @payload[field] = parse_time(time)
+          end
+        end
 
         pool = Thread.current[:faktory_via_pool] || ::Faktory.server_pool
         ::Faktory.client_middleware.invoke(@payload, pool) do

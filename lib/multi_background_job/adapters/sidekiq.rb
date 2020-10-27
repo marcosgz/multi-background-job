@@ -56,7 +56,8 @@ module MultiBackgroundJob
       # @return [Hash] Payload that was sent to redis
       def push
         @payload['enqueued_at'] = Time.now.to_f
-        if (timestamp = @payload.delete('at'))
+        # Optimization to enqueue something now that is scheduled to go out now or in the past
+        if (timestamp = @payload.delete('at')) && (timestamp > Time.now.to_f)
           MultiBackgroundJob.redis_pool.with do |redis|
             redis.zadd(scheduled_queue_name, timestamp.to_f.to_s, to_json(@payload))
           end
