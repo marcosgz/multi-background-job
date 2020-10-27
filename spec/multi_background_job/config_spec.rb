@@ -25,6 +25,22 @@ RSpec.describe MultiBackgroundJob::Config do
       expect { config.redis_pool_size = 0 }.to raise_error(MultiBackgroundJob::InvalidConfig, msg.(0))
       expect { config.redis_pool_size = -1 }.to raise_error(MultiBackgroundJob::InvalidConfig, msg.(-1))
     end
+
+    context 'from YAML configuration' do
+      before do
+        config.instance_variable_set(:@config_from_yaml, { 'redis_pool_size' => '5' })
+      end
+
+      it 'loads value and convert to integer' do
+        expect(config.redis_pool_size).to eq(5)
+      end
+
+      it 'overwrites the YAML value' do
+        expect(config.redis_pool_size).to eq(5)
+        config.redis_pool_size = 10
+        expect(config.redis_pool_size).to eq(10)
+      end
+    end
   end
 
   describe '.redis_pool_timeout=' do
@@ -39,6 +55,22 @@ RSpec.describe MultiBackgroundJob::Config do
       expect { config.redis_pool_timeout = 0 }.to raise_error(MultiBackgroundJob::InvalidConfig, msg.(0))
       expect { config.redis_pool_timeout = -1 }.to raise_error(MultiBackgroundJob::InvalidConfig, msg.(-1))
     end
+
+    context 'from YAML configuration' do
+      before do
+        config.instance_variable_set(:@config_from_yaml, { 'redis_pool_timeout' => '5' })
+      end
+
+      it 'loads value and convert to integer' do
+        expect(config.redis_pool_timeout).to eq(5)
+      end
+
+      it 'overwrites the YAML value' do
+        expect(config.redis_pool_timeout).to eq(5)
+        config.redis_pool_timeout = 10
+        expect(config.redis_pool_timeout).to eq(10)
+      end
+    end
   end
 
   describe '.redis_namespace=' do
@@ -46,6 +78,22 @@ RSpec.describe MultiBackgroundJob::Config do
       expect(config.redis_namespace).to eq('multi-bg')
       config.redis_namespace = 'custom-ns'
       expect(config.redis_namespace).to eq('custom-ns')
+    end
+
+    context 'from YAML configuration' do
+      before do
+        config.instance_variable_set(:@config_from_yaml, { 'redis_namespace' => 'ns' })
+      end
+
+      it 'loads default config from YAML' do
+        expect(config.redis_namespace).to eq('ns')
+      end
+
+      it 'overwrites the YAML value' do
+        expect(config.redis_namespace).to eq('ns')
+        config.redis_namespace = 'custom-ns'
+        expect(config.redis_namespace).to eq('custom-ns')
+      end
     end
   end
 
@@ -77,6 +125,25 @@ RSpec.describe MultiBackgroundJob::Config do
         DummyWorker: { 'queue' => 'default' }
       }
       expect(config.workers).to eq('DummyWorker' => { queue: 'default' })
+    end
+
+    context 'from YAML configuration' do
+      before do
+        config.instance_variable_set(:@config_from_yaml, { 'workers' => { 'DummyWorker' => { 'retry' => false, 'queue' => 'dummy' } } })
+      end
+
+      it 'loads default config from YAML' do
+        expect(config.workers).to eq('DummyWorker' => { retry: false, queue: 'dummy' })
+      end
+
+      it 'overwrites the YAML value' do
+        expect(config.workers).to eq('DummyWorker' => { retry: false, queue: 'dummy' })
+        config.workers['OtherWorker'] = { retry: true }
+        expect(config.workers).to eq(
+          'DummyWorker' => { retry: false, queue: 'dummy' },
+          'OtherWorker' => { retry: true },
+        )
+      end
     end
   end
 

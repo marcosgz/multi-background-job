@@ -137,10 +137,8 @@ module MultiBackgroundJob
     end
 
     def config_from_yaml
-      return {} unless config_path
-
       @config_from_yaml ||= begin
-        YAML.load_file(config_path)
+        config_path ? YAML.load_file(config_path) : {}
       rescue Errno::ENOENT, Errno::ESRCH
         {}
       end
