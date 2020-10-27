@@ -10,7 +10,7 @@ RSpec.describe MultiBackgroundJob::Config do
     it { expect(config.redis_pool_timeout).to eq(5) }
     it { expect(config.redis_namespace).to eq('multi-bg') }
     it { expect(config.redis_config).to eq({}) }
-    it { expect(config.config_path).to eq('config/background_job.yml') }
+    it { expect(config.config_path).to eq(nil) }
   end
 
   describe '.redis_pool_size=' do

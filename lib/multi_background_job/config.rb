@@ -16,7 +16,7 @@ module MultiBackgroundJob
 
         define_method(field) do
           unless instance_variable_defined?(:"@#{field}")
-            fallback =  default #config_from_yaml[field.to_s] ||
+            fallback = config_from_yaml[field.to_s] || default
             return unless fallback
 
             send(:"#{field}=", fallback.respond_to?(:call) ? fallback.call : fallback)
@@ -33,6 +33,9 @@ module MultiBackgroundJob
       end
     end
 
+    # Path to the YAML file with configs
+    attr_accessor :config_path
+
     # ConnectionPool options for redis
     attribute_accessor :redis_pool_size, default: 5, normalizer: :normalize_to_int, validator: :validate_greater_than_zero
     attribute_accessor :redis_pool_timeout, default: 5, normalizer: :normalize_to_int, validator: :validate_greater_than_zero
@@ -42,9 +45,6 @@ module MultiBackgroundJob
 
     # List of configurations to be passed along to the Redis.new
     attribute_accessor :redis_config, default: {}
-
-    # Path to the YAML file with configs
-    attribute_accessor :config_path, default: 'config/background_job.yml'
 
     # A Hash with all workers definitions. The worker class name must be the main hash key
     # Example:
@@ -81,6 +81,11 @@ module MultiBackgroundJob
       @middleware ||= MiddlewareChain.new
       yield @middleware if block_given?
       @middleware
+    end
+
+    def config_path=(value)
+      @config_from_yaml = nil
+      @config_path = value
     end
 
     private
@@ -132,7 +137,9 @@ module MultiBackgroundJob
     end
 
     def config_from_yaml
-      @config ||= begin
+      return {} unless config_path
+
+      @config_from_yaml ||= begin
         YAML.load_file(config_path)
       rescue Errno::ENOENT, Errno::ESRCH
         {}
