@@ -50,6 +50,10 @@ RSpec.describe 'MultiBackgroundJob::Workers::Faktory' do
         stub_const('Faktory::Job', job_module)
       end
 
+      after do
+        reset_config!
+      end
+
       let(:worker) do
         Class.new do
           extend MultiBackgroundJob.for(:faktory)
@@ -78,6 +82,26 @@ RSpec.describe 'MultiBackgroundJob::Workers::Faktory' do
           service: :faktory,
         })
       end
+
+      it 'does not overwrite the :queue from configurations' do
+        MultiBackgroundJob.config.workers[worker.name] = {
+          queue: 'config',
+        }
+        expect(worker.service_worker_options).to eq(
+          queue: 'config',
+          retry: 0,
+        )
+      end
+
+      it 'does not overwrite the :queue from configurations' do
+        MultiBackgroundJob.config.workers[worker.name] = {
+          retry: 10,
+        }
+        expect(worker.service_worker_options).to eq(
+          queue: 'dummy',
+          retry: 10,
+        )
+      end
     end
 
     context 'with custom settings' do
@@ -99,6 +123,10 @@ RSpec.describe 'MultiBackgroundJob::Workers::Faktory' do
             'DummyWorkerTwo'
           end
         end
+      end
+
+      after do
+        reset_config!
       end
 
       specify do

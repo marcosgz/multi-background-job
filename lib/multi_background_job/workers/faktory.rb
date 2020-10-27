@@ -13,8 +13,10 @@ module MultiBackgroundJob
 
       module ClassMethods
         def service_worker_options
-          default_queue = ::Faktory.default_job_options['queue'] if defined?(::Faktory)
-          default_retry = ::Faktory.default_job_options['retry'] if defined?(::Faktory)
+          default_queue = MultiBackgroundJob.config.workers.dig(self.name, :queue)
+          default_retry = MultiBackgroundJob.config.workers.dig(self.name, :retry)
+          default_queue ||= ::Faktory.default_job_options['queue'] if defined?(::Faktory)
+          default_retry ||= ::Faktory.default_job_options['retry'] if defined?(::Faktory)
           {
             queue: (default_queue || 'default'),
             retry: (default_retry || 25),

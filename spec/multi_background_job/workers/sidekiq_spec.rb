@@ -46,6 +46,7 @@ RSpec.describe 'MultiBackgroundJob::Workers::Sidekiq' do
 
       after do
         Object.send(:remove_const, :Sidekiq) if Object.constants.include?(:Sidekiq)
+        reset_config!
       end
 
       let(:worker) do
@@ -73,6 +74,26 @@ RSpec.describe 'MultiBackgroundJob::Workers::Sidekiq' do
 
       specify do
         expect(worker.included_modules).to include(worker_module)
+      end
+
+      it 'does not overwrite the :queue from configurations' do
+        MultiBackgroundJob.config.workers[worker.name] = {
+          queue: 'config',
+        }
+        expect(worker.service_worker_options).to eq(
+          queue: 'config',
+          retry: 0,
+        )
+      end
+
+      it 'does not overwrite the :queue from configurations' do
+        MultiBackgroundJob.config.workers[worker.name] = {
+          retry: 10,
+        }
+        expect(worker.service_worker_options).to eq(
+          queue: 'dummy',
+          retry: 10,
+        )
       end
     end
   end
