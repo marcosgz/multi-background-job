@@ -129,18 +129,18 @@ RSpec.describe MultiBackgroundJob::Config do
 
     context 'from YAML configuration' do
       before do
-        config.instance_variable_set(:@config_from_yaml, { 'workers' => { 'DummyWorker' => { 'retry' => false, 'queue' => 'dummy' } } })
+        config.instance_variable_set(:@config_from_yaml, { 'workers' => { 'DummyWorker' => { 'retry' => false, 'queue' => 'dummy', 'uniq' => { 'across' => 'queue' }  } } })
       end
 
       it 'loads default config from YAML' do
-        expect(config.workers).to eq('DummyWorker' => { retry: false, queue: 'dummy' })
+        expect(config.workers).to eq('DummyWorker' => { retry: false, queue: 'dummy', uniq: { across: 'queue' } })
       end
 
       it 'overwrites the YAML value' do
-        expect(config.workers).to eq('DummyWorker' => { retry: false, queue: 'dummy' })
+        expect(config.workers).to eq('DummyWorker' => { retry: false, queue: 'dummy', uniq: { across: 'queue' } })
         config.workers['OtherWorker'] = { retry: true }
         expect(config.workers).to eq(
-          'DummyWorker' => { retry: false, queue: 'dummy' },
+          'DummyWorker' => { retry: false, queue: 'dummy', uniq: { across: 'queue' } },
           'OtherWorker' => { retry: true },
         )
       end

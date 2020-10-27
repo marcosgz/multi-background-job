@@ -131,7 +131,7 @@ module MultiBackgroundJob
 
       hash = {}
       value.each do |class_name, opts|
-        hash[class_name.to_s] = opts.each_with_object({}) { |(k,v), r| r[k.to_sym] = v }
+        hash[class_name.to_s] = MultiJson.load(MultiJson.dump(opts), symbolize_names: true)
       end
       hash
     end
