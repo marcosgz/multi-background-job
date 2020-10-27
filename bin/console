@@ -6,4 +6,8 @@ require 'pry'
 require 'awesome_print'
 require 'multi_background_job'
 
+MultiBackgroundJob.configure do |config|
+  config.strict = false
+end
+
 Pry.start

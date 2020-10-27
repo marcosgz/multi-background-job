@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../lock'
-
 module MultiBackgroundJob
   module Adapters
     # This is a Sidekiq adapter that converts MultiBackgroundJob::Worker object into a sidekiq readable format
@@ -13,15 +11,12 @@ module MultiBackgroundJob
         @worker = worker
         @queue = worker.options.fetch(:queue, 'default')
 
-        @payload = {
+        @payload = worker.payload.merge(
           'class' => worker.worker_class,
-          'args'  => worker.job.fetch('args', []),
-          'jid'   => worker.job.fetch('jid'),
           'retry' => worker.options.fetch(:retry, true),
           'queue' => @queue,
-          'created_at' => worker.job.fetch('created_at', Time.now.to_f),
-        }
-        @payload['uniq'] = worker.job['uniq'] if worker.job['uniq']
+        )
+        @payload['created_at'] ||= Time.now.to_f
       end
 
       # Coerces the raw payload into an instance of Worker
@@ -58,10 +53,10 @@ module MultiBackgroundJob
       #   * If job has the 'at' key. Then schedule it
       #   * Otherwise enqueue for immediate execution
       #
-      # @return [Hash, NilClass] Payload that was sent to redis, or nil if job should be uniq and already exists
+      # @return [Hash] Payload that was sent to redis
       def push
         @payload['enqueued_at'] = Time.now.to_f
-        if (timestamp = worker.job['at'])
+        if (timestamp = @payload.delete('at'))
           MultiBackgroundJob.redis_pool.with do |redis|
             redis.zadd(scheduled_queue_name, timestamp.to_f.to_s, to_json(@payload))
           end

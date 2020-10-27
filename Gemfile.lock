@@ -14,6 +14,8 @@ GEM
     connection_pool (2.2.3)
     diff-lcs (1.4.4)
     dotenv (2.7.6)
+    faktory_worker_ruby (1.0.0)
+      connection_pool (~> 2.2, >= 2.2.2)
     method_source (1.0.0)
     multi_json (1.15.0)
     pry (0.13.1)
@@ -42,6 +44,7 @@ PLATFORMS
 DEPENDENCIES
   awesome_print
   dotenv
+  faktory_worker_ruby
   multi-background-job!
   pry
   rake (~> 12.0)

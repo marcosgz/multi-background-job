@@ -16,7 +16,7 @@ module MultiBackgroundJob
       format(
         "The %<worker>p is not defined and the MultiBackgroundJob is configured to work on strict mode.\n" +
         "it's highly recommended to include this worker class to the list of known workers.\n" +
-        "Example: `MultiBackgroundJob.configure { |config| config.workers => { %<worker>p => {} } }`\n" +
+        "Example: `MultiBackgroundJob.configure { |config| config.workers = { %<worker>p => {} } }`\n" +
         'Another option is to set config.strict = false',
         worker: @worker_class,
       )

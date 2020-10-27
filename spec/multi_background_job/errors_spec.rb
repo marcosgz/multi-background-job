@@ -9,7 +9,7 @@ RSpec.describe 'MultiBackgroundJob errors' do
       msg = <<~MSG.chomp
       The "MissingWorker" is not defined and the MultiBackgroundJob is configured to work on strict mode.
       it's highly recommended to include this worker class to the list of known workers.
-      Example: `MultiBackgroundJob.configure { |config| config.workers => { "MissingWorker" => {} } }`
+      Example: `MultiBackgroundJob.configure { |config| config.workers = { "MissingWorker" => {} } }`
       Another option is to set config.strict = false
       MSG
 

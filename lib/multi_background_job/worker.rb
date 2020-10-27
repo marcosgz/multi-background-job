@@ -4,12 +4,14 @@ require_relative './unique_job'
 
 module MultiBackgroundJob
   class Worker
-    attr_reader :options, :job, :worker_class, :unique_job
+    attr_reader :options, :payload, :worker_class, :unique_job
+
+    attr_reader :arguments
 
     def initialize(worker_class, **options)
       @worker_class = worker_class
       @options = options
-      @job = {} # @IDEA Convert @job hash to a Struct
+      @payload = {}
       unique(@options.delete(:uniq)) if @options.key?(:uniq)
     end
 
@@ -19,7 +21,14 @@ module MultiBackgroundJob
 
     %i[created_at enqueued_at].each do |method_name|
       define_method method_name do |value|
-        @job[method_name.to_s] = value
+        @payload[method_name.to_s] = \
+          case value
+          when Numeric then value.to_f
+          when String then Time.parse(value).to_f
+          when Time, DateTime then value.to_f
+          else
+            raise ArgumentError, format('The %<v>p is not a valid value for %<m>s.', v: value, m: method_name)
+          end
 
         self
       end
@@ -28,21 +37,22 @@ module MultiBackgroundJob
     # Adds arguments to the job
     # @return self
     def with_args(*args)
-      @job['args'.freeze] = args
+      @payload['args'] = args
 
       self
     end
 
     # Schedule the time when a job will be executed. Jobs which are scheduled in the past are enqueued for immediate execution.
-    # @param timestamp [Number] timestamp, numeric or something that acts numeric.
+    # @param timestamp [Numeric] timestamp, numeric or something that acts numeric.
     # @return self
     def in(timestamp)
       now = Time.now.to_f
+      timestamp = Time.parse(timestamp) if timestamp.is_a?(String)
       int = timestamp.respond_to?(:strftime) ? timestamp.to_f : now + timestamp.to_f
       return self if int <= now
 
-      @job['at'.freeze] = int
-      @job['created_at'.freeze] = now
+      @payload['at'] = int
+      @payload['created_at'] = now
 
       self
     end
@@ -54,13 +64,19 @@ module MultiBackgroundJob
     # @return self
     def unique(value)
       value = {} if value == true
-      @unique_job = value.is_a?(Hash) ? UniqueJob.coerce(value) : nil
+      @unique_job = \
+        case value
+        when Hash then UniqueJob.coerce(value)
+        when UniqueJob then value
+        else
+          nil
+        end
 
       self
     end
 
     def with_job_jid(jid = nil)
-      @job['jid'.freeze] ||= jid || MultiBackgroundJob.jid
+      @payload['jid'] ||= jid || MultiBackgroundJob.jid
 
       self
     end
@@ -74,7 +90,7 @@ module MultiBackgroundJob
         raise Error, format('Service %<to>p is not implemented. Please use one of %<list>p', to: to, list: SERVICES.keys)
       end
 
-      @job['created_at'.freeze] ||= Time.now.to_f
+      @payload['created_at'] ||= Time.now.to_f
       worker_to_push = with_job_jid
       MultiBackgroundJob.config.middleware.invoke(worker_to_push, to) do
         SERVICES[to].push(worker_to_push)
@@ -85,7 +101,7 @@ module MultiBackgroundJob
       return false unless other.is_a?(self.class)
 
       worker_class == other.worker_class && \
-        job == other.job &&
+        payload == other.payload &&
         options == other.options &&
         unique_job == other.unique_job
     end

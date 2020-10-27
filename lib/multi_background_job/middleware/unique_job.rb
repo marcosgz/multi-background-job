@@ -30,9 +30,8 @@ module MultiBackgroundJob
           return false if uniq_lock.locked? # Don't push job to server
 
           # Add unique job information to the job payload
-          worker.job['uniq'] = worker.unique_job.to_hash.merge(
-            'lock' => uniq_lock.to_hash,
-          )
+          worker.unique_job.lock = uniq_lock
+          worker.payload['uniq'] = worker.unique_job.to_hash
 
           uniq_lock.lock
         end
@@ -58,7 +57,7 @@ module MultiBackgroundJob
       end
 
       def unique_job_lock_id(worker)
-        identifier_data = [worker.worker_class, worker.job.fetch('args'.freeze, [])]
+        identifier_data = [worker.worker_class, worker.payload.fetch('args'.freeze, [])]
         Digest::SHA256.hexdigest(
           MultiJson.dump(identifier_data, mode: :compat),
         )
