@@ -184,4 +184,17 @@ RSpec.describe MultiBackgroundJob::Config do
       expect(config.middleware).to be_an_instance_of(MultiBackgroundJob::MiddlewareChain)
     end
   end
+
+  describe '.unique_job_active' do
+    specify do
+      expect(config.unique_job_active).to eq(false)
+      expect(config).not_to be_unique_job_active
+    end
+
+    specify do
+      config.unique_job_active = true
+      expect(config.unique_job_active).to eq(true)
+      expect(config).to be_unique_job_active
+    end
+  end
 end

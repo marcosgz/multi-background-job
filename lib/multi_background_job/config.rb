@@ -17,7 +17,7 @@ module MultiBackgroundJob
         define_method(field) do
           unless instance_variable_defined?(:"@#{field}")
             fallback = config_from_yaml[field.to_s] || default
-            return unless fallback
+            return if fallback.nil?
 
             send(:"#{field}=", fallback.respond_to?(:call) ? fallback.call : fallback)
           end
@@ -57,9 +57,13 @@ module MultiBackgroundJob
     #     adapter: "faktory"
     attribute_accessor :workers, default: {}
 
-    # Does not validate if it's  when set to false
+    # Does not validate if it's when set to false
     attribute_accessor :strict, default: true
     alias strict? strict
+
+    # Global disable the unique_job_active
+    attribute_accessor :unique_job_active, default: false
+    alias unique_job_active? unique_job_active
 
     def worker_options(class_name)
       class_name = class_name.to_s

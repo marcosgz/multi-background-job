@@ -21,12 +21,14 @@ module MultiBackgroundJob
         end
 
         MultiBackgroundJob.configure do |config|
+          config.unique_job_active = true
           config.middleware.add(UniqueJob)
         end
       end
 
       def call(worker, service)
-        if (uniq_lock = unique_job_lock(worker: worker, service: service))
+        if MultiBackgroundJob.config.unique_job_active? &&
+            (uniq_lock = unique_job_lock(worker: worker, service: service))
           return false if uniq_lock.locked? # Don't push job to server
 
           # Add unique job information to the job payload

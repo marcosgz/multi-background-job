@@ -6,16 +6,18 @@ require 'multi_background_job/middleware/unique_job'
 RSpec.describe MultiBackgroundJob::Middleware::UniqueJob, freeze_at: [2020, 7, 2, 12, 30, 50] do
   describe '.bootstrap' do
     before do
-      MultiBackgroundJob.config.middleware.clear
+      reset_config!
     end
 
     after do
-      MultiBackgroundJob.config.middleware.clear
+      reset_config!
     end
 
     it 'loads and configure the external middleware for sidekiq' do
+      expect(MultiBackgroundJob.config).not_to be_unique_job_active
       described_class.bootstrap(service: :sidekiq)
       expect { MultiBackgroundJob.const_get('Middleware::UniqueJob::Sidekiq::Worker') }.not_to raise_error
+      expect(MultiBackgroundJob.config).to be_unique_job_active
       expect(MultiBackgroundJob.config.middleware.exists?(described_class)).to eq(true)
     end
 
@@ -24,6 +26,7 @@ RSpec.describe MultiBackgroundJob::Middleware::UniqueJob, freeze_at: [2020, 7, 2
         MultiBackgroundJob::Error,
         %[UniqueJob is not supported for the `:invalid' service. Supported options are: `:sidekiq', `:faktory'.]
       )
+      expect(MultiBackgroundJob.config).not_to be_unique_job_active
       expect(MultiBackgroundJob.config.middleware.exists?(described_class)).to eq(false)
     end
   end
