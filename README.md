@@ -3,8 +3,8 @@
 This library provices an centralized interface to push jobs to a variety of queuing backends. Thus allowing to send jobs to multiple external services. If you are running a [Ruby on Rails](https://github.com/rails/rails) application consider using [Active Jobs](https://github.com/rails/rails/tree/master/activejob). ActiveJobs integrates with a wider range of services and builtin support.
 
 Supported Services:
-* Faktory
-* Sidekiq
+* Faktory (Faktory::Client is used as depency to push jobs)
+* Sidekiq (Sidekiq gem is not a depenency. We are using redis connection to push jobs)
 
 ## Installation
 
@@ -24,8 +24,8 @@ Or install it yourself as:
 
 ## Usage
 
-This gem should work with default configurations if you have `REDIS_URL` and/or `FAKTORY_URL` environment variables correctly defined. But you can use the `MultiBackgroundJob#configure` method to custumize default settings.
 
+This gem should work with default configurations if you have `REDIS_URL` and/or `FAKTORY_URL` environment variables correctly defined. But you can use the `MultiBackgroundJob#configure` method to customize default settings.
 
 ```ruby
 MultiBackgroundJob.configure do |config|
@@ -40,6 +40,62 @@ MultiBackgroundJob.configure do |config|
   config.strict = false                             # Only allow to push jobs to known workers. See `config.workers`. (Default to true)
 end
 ```
+
+### Client Setup
+
+You can use the DSL to start building worker and push to background job services.
+
+```ruby
+# Enqueue the 'Accounts::ConfirmationEmailWorker' job with 'User', 1 arguments to the sidekiq "other_mailing" queue
+MultiBackgroundJob['Accounts::ConfirmationEmailWorker', queue: 'other_mailing' ]
+  .with_args('User', 1)
+  .push(to: :sidekiq)
+
+# Schedule the 'Accounts::ConfirmationEmailWorker' job with 'User', 1 arguments to the sidekiq "other_mailing" queue to be executed in one hour.
+MultiBackgroundJob['Accounts::ConfirmationEmailWorker', queue: 'other_mailing' ]
+  .with_args('User', 1)
+  .in(1.hour)
+  .push(to: :sidekiq)
+
+# Enqueue the 'Accounts::ConfirmationEmailWorker' job with 'User', 2 arguments to the sidekiq "mailing" queue(From global config definition)
+MultiBackgroundJob['Accounts::ConfirmationEmailWorker']
+  .with_args('User', 2)
+  .push(to: :faktory)
+```
+
+MultiBackgroundJob is not required as a dependency of backend servers if you are only use it to push jobs(** Except when you are using middleware like **UniqueJobs Middleware** of next section)
+
+### Server Setup
+
+This is only a necessary step in the case of using the **UniqueJobs Middleware** of next section.
+
+Example of sidekiq worker:
+
+```diff
+class Accounts::ConfirmationEmailWorker
+  + extend MultiBackgroundJob.for(:sidekiq, queue: :mailing)
+  - include Sidekiq::Worker
+  - sidekiq_options queue: :mailing
+
+  def perform(resource_type, resource_id); end;
+end
+```
+
+Example of faktory worker:
+
+```diff
+class Accounts::ConfirmationEmailWorker
+  + extend MultiBackgroundJob.for(:sidekiq, queue: :mailing)
+  - include Faktory::Job
+  - faktory_options queue: :mailing
+
+  def perform(resource_type, resource_id); end;
+end
+```
+
+Now when you call `Accounts::ConfirmationEmailWorker.perform_async` or `Accounts::ConfirmationEmailWorker.perform_in` it will use this gem to push jobs to the backend server.
+
+Note that settings defined througth the worker class have greater weight then the ones defined from global `MultiBackgroundJob.config.workers`. And the `MultiBackgroundJob.config.workers` have greater weight then both `Sidekiq.default_worker_options` or `Faktory.default_job_options`.
 
 ### Unique Jobs
 
