@@ -46,18 +46,21 @@ end
 You can use the DSL to start building worker and push to background job services.
 
 ```ruby
-# Enqueue the 'Accounts::ConfirmationEmailWorker' job with 'User', 1 arguments to the sidekiq "other_mailing" queue
+# Enqueue the 'Accounts::ConfirmationEmailWorker' job with 'User', 1 arguments
+# to the sidekiq "other_mailing" queue
 MultiBackgroundJob['Accounts::ConfirmationEmailWorker', queue: 'other_mailing' ]
   .with_args('User', 1)
   .push(to: :sidekiq)
 
-# Schedule the 'Accounts::ConfirmationEmailWorker' job with 'User', 1 arguments to the sidekiq "other_mailing" queue to be executed in one hour.
+# Schedule the 'Accounts::ConfirmationEmailWorker' job with 'User', 1 arguments
+# to the sidekiq "other_mailing" queue to be executed in one hour.
 MultiBackgroundJob['Accounts::ConfirmationEmailWorker', queue: 'other_mailing' ]
   .with_args('User', 1)
   .in(1.hour)
   .push(to: :sidekiq)
 
-# Enqueue the 'Accounts::ConfirmationEmailWorker' job with 'User', 2 arguments to the sidekiq "mailing" queue(From global config definition)
+# Enqueue the 'Accounts::ConfirmationEmailWorker' job with 'User', 2 arguments
+# to the faktory "mailing" queue(Using :queu from global config.workers definition)
 MultiBackgroundJob['Accounts::ConfirmationEmailWorker']
   .with_args('User', 2)
   .push(to: :faktory)
