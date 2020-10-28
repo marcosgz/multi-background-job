@@ -44,6 +44,38 @@ module MultiBackgroundJob
       end
     end
 
+    # Remove all locks from redis "sorted set"
+    #
+    # @param [String] digest It's the uniq string used to group similar jobs
+    def self.flush(digest, redis: nil)
+      return unless digest
+
+      caller = ->(conn) { conn.del(digest) }
+
+      if redis
+        caller.(redis)
+      else
+        MultiBackgroundJob.redis_pool.with { |conn| caller.(conn) }
+      end
+    end
+
+    # Number of locks
+    #
+    # @param digest [String] It's the uniq string used to group similar jobs
+    # @option [Number] from The begin of set. Default to 0
+    # @option [Number] to The end of set. Default to the timestamp of 1 week from now
+    # @return Number the amount of entries that within digest
+    def self.count(digest, from: 0, to: nil, redis: nil)
+      to ||= Time.now.to_f + MultiBackgroundJob::UniqueJob::VALID_OPTIONS[:timeout]
+      caller = ->(conn) { conn.zcount(digest, from, to) }
+
+      if redis
+        caller.(redis)
+      else
+        MultiBackgroundJob.redis_pool.with { |conn| caller.(conn) }
+      end
+    end
+
     def to_hash
       {
         'ttl' => ttl,

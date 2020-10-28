@@ -166,4 +166,58 @@ RSpec.describe MultiBackgroundJob::Lock, freeze_at: [2020, 7, 1, 22, 24, 40] do
       end
     end
   end
+
+  describe '.flush class method' do
+    it 'does not raise an error when the digest does not exist' do
+      MultiBackgroundJob.redis_pool.with do |conn|
+        conn.del(digest)
+        expect(described_class.count(digest, redis: conn)).to eq(0)
+      end
+      expect(described_class.count(digest)).to eq(0)
+    end
+
+    it 'filters the range acording to the ttl' do
+      described_class.new(digest: digest, ttl: ttl-1, lock_id: lock_id+'a').lock
+      described_class.new(digest: digest+'x', ttl: ttl, lock_id: lock_id+'b').lock
+      described_class.new(digest: digest, ttl: ttl+1, lock_id: lock_id+'c').lock
+
+      expect(described_class.count(digest)).to eq(2)
+      expect(described_class.count(digest, from: ttl+1)).to eq(1)
+      expect(described_class.count(digest, to: ttl-1)).to eq(1)
+      expect(described_class.count(digest+'x', from: ttl, to: ttl)).to eq(1)
+      expect(described_class.count(digest, from: ttl, to: ttl)).to eq(0)
+    end
+  end
+
+  describe '.flush class method' do
+    it 'does not raise an error when the digest does not exist' do
+      MultiBackgroundJob.redis_pool.with do |conn|
+        conn.del(digest)
+        expect { described_class.flush(digest, redis: conn) }.not_to raise_error
+      end
+      expect { described_class.flush(digest) }.not_to raise_error
+    end
+
+    it 'removes all locks without redis argument' do
+      described_class.new(digest: digest, ttl: ttl, lock_id: lock_id + '1').lock
+      described_class.new(digest: digest, ttl: ttl, lock_id: lock_id + '2').lock
+
+      MultiBackgroundJob.redis_pool.with do |conn|
+        expect(conn.zcount(digest, 0, ttl + WEEK_IN_SECONDS)).to be >= 2
+        expect { described_class.flush(digest) }.not_to raise_error
+        expect(conn.zcount(digest, 0, ttl + WEEK_IN_SECONDS)).to eq(0)
+      end
+    end
+
+    it 'removes all locks using connection from arguments' do
+      described_class.new(digest: digest, ttl: ttl, lock_id: lock_id + '1').lock
+      described_class.new(digest: digest, ttl: ttl, lock_id: lock_id + '2').lock
+
+      MultiBackgroundJob.redis_pool.with do |conn|
+        expect(conn.zcount(digest, 0, ttl + WEEK_IN_SECONDS)).to be >= 2
+        expect { described_class.flush(digest, redis: conn) }.not_to raise_error
+        expect(conn.zcount(digest, 0, ttl + WEEK_IN_SECONDS)).to eq(0)
+      end
+    end
+  end
 end
