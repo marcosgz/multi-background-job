@@ -76,9 +76,9 @@ Example of sidekiq worker:
 
 ```diff
 class Accounts::ConfirmationEmailWorker
-  + extend MultiBackgroundJob.for(:sidekiq, queue: :mailing)
-  - include Sidekiq::Worker
-  - sidekiq_options queue: :mailing
++  extend MultiBackgroundJob.for(:sidekiq, queue: :mailing)
+-  include Sidekiq::Worker
+-  sidekiq_options queue: :mailing
 
   def perform(resource_type, resource_id); end;
 end
@@ -88,9 +88,9 @@ Example of faktory worker:
 
 ```diff
 class Accounts::ConfirmationEmailWorker
-  + extend MultiBackgroundJob.for(:sidekiq, queue: :mailing)
-  - include Faktory::Job
-  - faktory_options queue: :mailing
++   extend MultiBackgroundJob.for(:sidekiq, queue: :mailing)
+-   include Faktory::Job
+-   faktory_options queue: :mailing
 
   def perform(resource_type, resource_id); end;
 end
