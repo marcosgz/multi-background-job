@@ -1,6 +1,6 @@
 # MultiBackgroundJob
 
-This library provices an centralized interface to push jobs to a variety of queuing backends. Thus allowing to send jobs to multiple external services. If you are running a [Ruby on Rails](https://github.com/rails/rails) application consider using [Active Jobs](https://github.com/rails/rails/tree/master/activejob). ActiveJobs integrates with a wider range of services and builtin support.
+This library provices a centralized interface to push jobs to a variety of queuing backends. Thus allowing to send jobs to multiple external services. If you are running a [Ruby on Rails](https://github.com/rails/rails) application consider using [Active Jobs](https://github.com/rails/rails/tree/master/activejob). ActiveJobs integrates with a wider range of services and builtin support.
 
 Supported Services:
 * Faktory (Faktory::Client is used as depency to push jobs)
